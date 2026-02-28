@@ -2,514 +2,401 @@
 <html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>小五英文默書助手 - Part A</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>小五英文默書 - Verb Table</title>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-    
     <style>
-        :root {
-            --primary-color: #4CAF50;
-            --secondary-color: #2196F3;
-            --bg-color: #f4f7f6;
-        }
         body {
-            font-family: 'Comic Sans MS', 'PingFang HK', sans-serif;
-            background-color: var(--bg-color);
-            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, "微軟正黑體";
             padding: 20px;
+            background-color: #f9f9f9;
             color: #333;
         }
-        h1, h2 {
+        h2 {
             text-align: center;
-            color: #2c3e50;
         }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
+        .table-container {
+            display: flex;
+            justify-content: center;
+            overflow-x: auto;
         }
         table {
-            width: 100%;
             border-collapse: collapse;
+            background-color: white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
             margin-bottom: 20px;
         }
         th, td {
-            border: 2px solid #ddd;
-            padding: 12px;
-            text-align: left;
+            border: 1px solid #666;
+            padding: 10px;
+            text-align: center;
+            vertical-align: middle;
             font-size: 18px;
         }
         th {
-            background-color: #ffeaa7;
+            background-color: #e0e0e0;
+        }
+        /* 四線譜背景設計 */
+        .canvas-wrapper {
+            position: relative;
+            width: 160px;
+            height: 50px;
+            margin: 0 auto;
+            background-color: #fff;
+            background-image: linear-gradient(
+                to bottom,
+                transparent 13px, #ff9999 14px, /* 第一線 紅色 */
+                transparent 15px, transparent 24px, #99ccff 25px, /* 第二線 藍色 */
+                transparent 26px, transparent 35px, #99ccff 36px, /* 第三線 藍色 */
+                transparent 37px, transparent 46px, #ff9999 47px /* 第四線 紅色 */
+            );
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            cursor: crosshair;
+            touch-action: none; /* 防止在畫布上滑動時觸發網頁滾動 */
+        }
+        .correct-ans-col {
+            display: none; /* 預設隱藏，批改後顯示 */
+            color: #0056b3;
+            font-weight: bold;
+            background-color: #f0f8ff;
+        }
+        .mark-icon {
+            font-size: 24px;
+            font-weight: bold;
+            margin-left: 10px;
+            vertical-align: middle;
+            display: inline-block;
+            width: 25px;
+        }
+        .tick { color: #28a745; }
+        .cross { color: #dc3545; }
+        
+        .controls {
             text-align: center;
-        }
-        input[type="text"] {
-            width: 80%;
-            padding: 8px;
-            font-size: 18px;
-            border: 2px dashed #aaa;
-            border-radius: 5px;
-            text-align: center;
-        }
-        input.correct {
-            background-color: #c8e6c9;
-            border-color: #4CAF50;
-        }
-        input.incorrect {
-            background-color: #ffcdd2;
-            border-color: #f44336;
+            margin: 20px 0;
         }
         button {
             padding: 10px 20px;
             font-size: 16px;
-            border: none;
-            border-radius: 8px;
+            margin: 0 5px;
             cursor: pointer;
-            margin: 5px;
-            font-weight: bold;
-            transition: transform 0.1s;
-        }
-        button:active {
-            transform: scale(0.95);
-        }
-        button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-        .btn-check { background-color: var(--primary-color); color: white; }
-        .btn-reset { background-color: #ff9800; color: white; }
-        .btn-speak { 
-            background: none; 
-            border: none; 
-            font-size: 20px; 
-            cursor: pointer; 
-            padding: 0; 
-            margin-left: 5px;
-        }
-        .btn-speak:hover { transform: scale(1.2); }
-        
-        .score-board {
-            font-size: 24px;
-            font-weight: bold;
-            text-align: center;
-            color: #e74c3c;
-            margin: 10px 0;
-            min-height: 35px;
-        }
-
-        /* 雙層畫布系統 Styles */
-        .canvas-wrapper {
-            position: relative;
-            width: 100%;
-            max-width: 700px;
-            height: 440px;
-            margin: 10px auto 20px auto;
-        }
-        .canvas-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border: 2px solid #555;
-            border-radius: 10px;
-        }
-        #textCanvas {
-            z-index: 1; 
-            background-image: repeating-linear-gradient(white, white 39px, #81ecec 40px);
-        }
-        #dictationCanvas {
-            z-index: 2; 
-            background-color: transparent;
-            cursor: crosshair;
-            /* 防止畫圖時網頁跟著滑動 */
-            touch-action: none; 
-        }
-        
-        /* 底部工具與按鈕列整合 */
-        .action-group {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-top: 15px;
-        }
-        .toolbar {
-            background: #eee;
-            padding: 6px;
-            border-radius: 10px;
-            display: flex;
-            gap: 5px;
-        }
-        .tool-btn {
-            background-color: white;
-            color: #333;
-            border: 2px solid #ccc;
-            padding: 8px 15px;
-            border-radius: 20px;
-            margin: 0; /* 覆蓋全域 button margin */
-        }
-        .tool-btn.active {
-            background-color: #ffeaa7;
-            border-color: #f39c12;
-            box-shadow: 0 0 5px rgba(0,0,0,0.2);
-        }
-
-        .mock-result {
-            display: none;
-            background: #e8f8f5;
-            border-left: 5px solid #1abc9c;
-            padding: 15px;
-            margin-top: 15px;
+            border: none;
             border-radius: 5px;
+            color: white;
+            transition: 0.3s;
         }
-        
-        .loading {
-            color: var(--secondary-color);
+        #btnBlue { background-color: #007bff; }
+        #btnEraser { background-color: #6c757d; }
+        #btnGrade { background-color: #28a745; font-weight: bold; }
+        #btnClear { background-color: #dc3545; }
+        button:hover { opacity: 0.8; }
+        button.active { box-shadow: 0 0 0 4px rgba(0,0,0,0.2); transform: scale(1.05); }
+
+        #feedback-section {
+            text-align: center;
+            font-size: 22px;
             font-weight: bold;
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+        #loading {
+            display: none;
+            text-align: center;
+            font-size: 18px;
+            color: #d39e00;
+            font-weight: bold;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
 
-    <h1>📝 小五英文默書助手 (Regular / Irregular Verbs)</h1>
+    <h2>Part A: Verb table (regular / irregular verbs) (10%)</h2>
 
-    <div class="container" id="part1">
-        <h2>Part A: 請填上正確的 Present Perfect 動詞 (10分)</h2>
-        <p style="text-align: center; color: #e74c3c; font-size: 14px;">⚠️ 注意：必須完全寫對大小寫！例如答案是 asked，寫成 Asked 將會扣分。</p>
-        <table id="dictationTable">
+    <div class="table-container">
+        <table id="verbTable">
             <thead>
                 <tr>
-                    <th>Present Tense</th>
-                    <th>Present Perfect (答案)</th>
-                    <th>Present Tense</th>
-                    <th>Present Perfect (答案)</th>
+                    <th>Present tense</th>
+                    <th>Present Perfect<br>(has/have)</th>
+                    <th class="correct-ans-col">Correct Answer</th>
+                    <th>Present tense</th>
+                    <th>Present Perfect<br>(has/have)</th>
+                    <th class="correct-ans-col">Correct Answer</th>
                 </tr>
             </thead>
-            <tbody id="tableBody"></tbody>
+            <tbody>
+                </tbody>
         </table>
-        <div style="text-align: center;">
-            <button class="btn-check" onclick="checkTable()">✔️ 自動批改</button>
-            <button class="btn-reset" onclick="resetTable()">🔄 重置表格</button>
-        </div>
-        <div class="score-board" id="tableScore"></div>
     </div>
 
-    <div class="container" id="part2">
-        <h2>Part A: 請在IPad用手指默在下面的單行內，需要時自己放大單行畫面默寫</h2>
-
-        <div class="canvas-wrapper">
-            <canvas id="textCanvas" class="canvas-layer" width="700" height="440"></canvas>
-            <canvas id="dictationCanvas" class="canvas-layer" width="700" height="440"></canvas>
-        </div>
-        
-        <div class="action-group">
-            <div class="toolbar">
-                <button class="tool-btn active" id="tool-blue" onclick="setTool('blue')">🖊️ 藍筆</button>
-                <button class="tool-btn" id="tool-eraser" onclick="setTool('eraser')">🧽 膠擦</button>
-            </div>
-            <button class="btn-reset" onclick="clearDrawCanvas()">🔄 清屏重默</button>
-            <button class="btn-check" id="btnCanvasOCR" onclick="checkCanvasOCR()">🤖 AI批改</button>
-        </div>
-
-        <div class="mock-result" id="canvasResult"></div>
+    <div class="controls">
+        <button id="btnBlue" class="active">✏️ 藍筆</button>
+        <button id="btnEraser">🧽 膠擦</button>
+        <button id="btnGrade">🤖 AI 自動批改</button>
+        <button id="btnClear">🗑️ 清屏重默</button>
     </div>
+
+    <div id="loading">⏳ AI 正在努力辨識你的手寫字中，請稍候約 10-20 秒...</div>
+    <div id="feedback-section"></div>
 
     <script>
-        const wordList = [
-            { present: 'ask', perfect: 'asked' },
-            { present: 'look', perfect: 'looked' },
-            { present: 'shout', perfect: 'shouted' },
-            { present: 'tidy', perfect: 'tidied' },
-            { present: 'study', perfect: 'studied' },
-            { present: 'eat', perfect: 'eaten' },
-            { present: 'ride', perfect: 'ridden' },
-            { present: 'take', perfect: 'taken' },
-            { present: 'get', perfect: 'got' },
-            { present: 'sit', perfect: 'sat' }
+        // 題目資料 (注意：圖片中第8題為take，下方原圖錯標為8. get，這裡修正為9. get)
+        const verbsData = [
+            { tense: "1. ask", perfect: "asked" },
+            { tense: "6. eat", perfect: "eaten" },
+            { tense: "2. look", perfect: "looked" },
+            { tense: "7. ride", perfect: "ridden" },
+            { tense: "3. shout", perfect: "shouted" },
+            { tense: "8. take", perfect: "taken" },
+            { tense: "4. tidy", perfect: "tidied" },
+            { tense: "9. get", perfect: "got" },
+            { tense: "5. study", perfect: "studied" },
+            { tense: "10. sit", perfect: "sat" }
         ];
 
-        const ignoreWordsList = ['part', 'verb', 'table', 'regular', 'irregular', 'verbs', 'present', 'tense', 'perfect', 'has', 'have'];
-        wordList.forEach(w => ignoreWordsList.push(w.present.toLowerCase()));
+        let canvases = [];
+        let contexts = [];
+        let currentTool = 'pen'; 
 
-        function speakWord(text) {
-            if ('speechSynthesis' in window) {
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'en-GB'; 
-                utterance.rate = 0.85;    
-                window.speechSynthesis.speak(utterance);
-            }
-        }
-
-        // --- 表格區塊 ---
-        function initTable() {
-            const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = '';
+        // 建立表格
+        function buildTable() {
+            const tbody = document.querySelector("#verbTable tbody");
             for (let i = 0; i < 5; i++) {
-                const wLeft = wordList[i], wRight = wordList[i + 5]; 
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${i + 1}. ${wLeft.present} <button class="btn-speak" onclick="speakWord('${wLeft.present}')">🔊</button></td>
-                        <td style="text-align: center;"><input type="text" id="ans_${i}" autocomplete="off"></td>
-                        <td>${i + 6}. ${wRight.present} <button class="btn-speak" onclick="speakWord('${wRight.present}')">🔊</button></td>
-                        <td style="text-align: center;"><input type="text" id="ans_${i + 5}" autocomplete="off"></td>
-                    </tr>`;
+                const tr = document.createElement("tr");
+                
+                // 左半部 (1-5)
+                const leftItem = verbsData[i * 2];
+                tr.appendChild(createCell(leftItem.tense));
+                tr.appendChild(createCanvasCell(i * 2));
+                tr.appendChild(createAnswerCell(leftItem.perfect, i * 2));
+
+                // 右半部 (6-10)
+                const rightItem = verbsData[i * 2 + 1];
+                tr.appendChild(createCell(rightItem.tense));
+                tr.appendChild(createCanvasCell(i * 2 + 1));
+                tr.appendChild(createAnswerCell(rightItem.perfect, i * 2 + 1));
+
+                tbody.appendChild(tr);
+            }
+            initCanvases();
+        }
+
+        function createCell(text) {
+            const td = document.createElement("td");
+            td.innerText = text;
+            return td;
+        }
+
+        function createCanvasCell(index) {
+            const td = document.createElement("td");
+            td.innerHTML = `
+                <div class="canvas-wrapper">
+                    <canvas id="canvas${index}" width="160" height="50"></canvas>
+                </div>
+                <span class="mark-icon" id="mark${index}"></span>
+            `;
+            return td;
+        }
+
+        function createAnswerCell(answer, index) {
+            const td = document.createElement("td");
+            td.className = "correct-ans-col ans-cell";
+            td.id = `ans${index}`;
+            td.innerText = answer;
+            return td;
+        }
+
+        // 初始化畫布與繪圖事件
+        function initCanvases() {
+            for (let i = 0; i < 10; i++) {
+                const canvas = document.getElementById(`canvas${i}`);
+                const ctx = canvas.getContext("2d", { willReadFrequently: true });
+                // 設定預設為藍筆，筆劃較幼
+                ctx.lineWidth = 2.5; 
+                ctx.lineCap = "round";
+                ctx.lineJoin = "round";
+                ctx.strokeStyle = "#0000ff";
+                
+                canvases.push(canvas);
+                contexts.push(ctx);
+
+                let isDrawing = false;
+                let lastX = 0;
+                let lastY = 0;
+
+                function getPos(e) {
+                    const rect = canvas.getBoundingClientRect();
+                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                    return { x: clientX - rect.left, y: clientY - rect.top };
+                }
+
+                function startDrawing(e) {
+                    isDrawing = true;
+                    const pos = getPos(e);
+                    lastX = pos.x; lastY = pos.y;
+                    ctx.beginPath();
+                    ctx.moveTo(lastX, lastY);
+                }
+
+                function draw(e) {
+                    if (!isDrawing) return;
+                    e.preventDefault(); // 防止手機滑動
+                    const pos = getPos(e);
+                    
+                    if (currentTool === 'eraser') {
+                        ctx.globalCompositeOperation = "destination-out";
+                        ctx.lineWidth = 15; // 膠擦大一點
+                    } else {
+                        ctx.globalCompositeOperation = "source-over";
+                        ctx.strokeStyle = "#0000ff";
+                        ctx.lineWidth = 2.5;
+                    }
+
+                    ctx.lineTo(pos.x, pos.y);
+                    ctx.stroke();
+                    lastX = pos.x; lastY = pos.y;
+                }
+
+                function stopDrawing() {
+                    isDrawing = false;
+                }
+
+                // 滑鼠事件
+                canvas.addEventListener('mousedown', startDrawing);
+                canvas.addEventListener('mousemove', draw);
+                canvas.addEventListener('mouseup', stopDrawing);
+                canvas.addEventListener('mouseout', stopDrawing);
+
+                // 觸控事件 (平板/手機)
+                canvas.addEventListener('touchstart', startDrawing);
+                canvas.addEventListener('touchmove', draw, {passive: false});
+                canvas.addEventListener('touchend', stopDrawing);
             }
         }
 
-        function checkTable() {
+        // 按鈕功能綁定
+        document.getElementById('btnBlue').addEventListener('click', function() {
+            currentTool = 'pen';
+            this.classList.add('active');
+            document.getElementById('btnEraser').classList.remove('active');
+        });
+
+        document.getElementById('btnEraser').addEventListener('click', function() {
+            currentTool = 'eraser';
+            this.classList.add('active');
+            document.getElementById('btnBlue').classList.remove('active');
+        });
+
+        document.getElementById('btnClear').addEventListener('click', function() {
+            if(confirm("確定要清除所有內容重新默寫嗎？")) {
+                contexts.forEach(ctx => {
+                    ctx.clearRect(0, 0, 160, 50);
+                });
+                // 隱藏答案與分數
+                document.querySelectorAll('.correct-ans-col').forEach(col => col.style.display = 'none');
+                for(let i=0; i<10; i++) {
+                    document.getElementById(`mark${i}`).innerHTML = '';
+                }
+                document.getElementById('feedback-section').style.display = 'none';
+            }
+        });
+
+        // AI 自動批改邏輯
+        document.getElementById('btnGrade').addEventListener('click', async function() {
+            const loading = document.getElementById('loading');
+            loading.style.display = 'block';
+            document.getElementById('feedback-section').style.display = 'none';
+            
+            // 顯示正確答案欄位
+            document.querySelectorAll('.correct-ans-col').forEach(col => {
+                col.style.display = 'table-cell';
+            });
+
             let score = 0;
-            for (let i = 0; i < wordList.length; i++) {
-                const inputElement = document.getElementById(`ans_${i}`);
-                const userAnswer = inputElement.value.trim();
-                const correctAnswer = wordList[i].perfect;
-                inputElement.classList.remove('correct', 'incorrect');
-                if (userAnswer === correctAnswer) {
-                    inputElement.classList.add('correct'); score++;
+            // 載入 Tesseract Worker (英文辨識)
+            const worker = await Tesseract.createWorker('eng');
+            
+            for (let i = 0; i < 10; i++) {
+                const canvas = canvases[i];
+                const expectedAnswer = verbsData[i].perfect;
+                
+                // 檢查畫布是否空白 (簡單判斷)
+                const blank = isCanvasBlank(canvas);
+                let recognizedText = "";
+
+                if (!blank) {
+                    // 使用 AI 辨識畫布上的圖像
+                    const { data: { text } } = await worker.recognize(canvas);
+                    // 移除多餘空白與標點，保留大小寫字母
+                    recognizedText = text.trim().replace(/[^a-zA-Z]/g, ''); 
+                }
+
+                const markIcon = document.getElementById(`mark${i}`);
+                
+                // 嚴格對比：完全相等（包括大小寫）才給分
+                if (!blank && recognizedText === expectedAnswer) {
+                    score++;
+                    markIcon.innerHTML = '✔';
+                    markIcon.className = 'mark-icon tick';
                 } else {
-                    inputElement.classList.add('incorrect');
-                    inputElement.value = `${userAnswer} (✗ ${correctAnswer})`;
-                }
-            }
-            document.getElementById('tableScore').innerText = `得分： ${score} / 10`;
-        }
-
-        function resetTable() {
-            for (let i = 0; i < wordList.length; i++) {
-                const el = document.getElementById(`ans_${i}`);
-                el.value = ''; el.classList.remove('correct', 'incorrect');
-            }
-            document.getElementById('tableScore').innerText = '';
-        }
-
-        // --- 畫布區塊 ---
-        const textCanvas = document.getElementById('textCanvas');
-        const textCtx = textCanvas.getContext('2d');
-        const canvas = document.getElementById('dictationCanvas');
-        const ctx = canvas.getContext('2d');
-        let isDrawing = false, currentTool = 'blue'; 
-
-        function setTool(tool) {
-            currentTool = tool;
-            document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(`tool-${tool}`).classList.add('active');
-        }
-
-        function initCanvasText(showAnswers = false) {
-            textCtx.clearRect(0, 0, textCanvas.width, textCanvas.height);
-            textCtx.font = '18px Comic Sans MS';
-            
-            // 定義座標與靠右對齊的邊界
-            let leftColX = 20, rightColX = 360; 
-            let leftColAlignRight = 330;  // 左欄答案靠右對齊的 X 座標
-            let rightColAlignRight = 680; // 右欄答案靠右對齊的 X 座標
-
-            for (let i = 0; i < 5; i++) {
-                let y = 65 + (i * 80); 
-                let wLeft = wordList[i], wRight = wordList[i+5];
-                
-                // 繪製左欄題目（靠左對齊）
-                textCtx.textAlign = 'left';
-                textCtx.fillStyle = '#333333';
-                let qLeft = `${i+1}. ${wLeft.present} ➔ `;
-                textCtx.fillText(qLeft, leftColX, y);
-                
-                // 繪製左欄答案（靠右對齊，純黑色）
-                if (showAnswers) { 
-                    textCtx.textAlign = 'right';
-                    textCtx.fillStyle = '#000000';
-                    textCtx.fillText(`( ${wLeft.perfect} )`, leftColAlignRight, y); 
-                }
-                
-                // 繪製右欄題目（靠左對齊）
-                textCtx.textAlign = 'left';
-                textCtx.fillStyle = '#333333';
-                let qRight = `${i+6}. ${wRight.present} ➔ `;
-                textCtx.fillText(qRight, rightColX, y);
-                
-                // 繪製右欄答案（靠右對齊，純黑色）
-                if (showAnswers) { 
-                    textCtx.textAlign = 'right';
-                    textCtx.fillStyle = '#000000';
-                    textCtx.fillText(`( ${wRight.perfect} )`, rightColAlignRight, y); 
+                    markIcon.innerHTML = '✘';
+                    markIcon.className = 'mark-icon cross';
+                    // 開發者可於 Console 觀看 AI 辨識出的文字與正確答案的差距
+                    console.log(`題號 ${verbsData[i].tense}: 預期[${expectedAnswer}], AI辨識為[${recognizedText}]`);
                 }
             }
             
-            // 將設定恢復預設，避免影響其他繪圖功能
-            textCtx.textAlign = 'left';
-        }
+            await worker.terminate();
+            loading.style.display = 'none';
 
-        // --- 優化為適合手指觸控的繪圖邏輯 ---
-        function startPosition(e) { 
-            isDrawing = true; 
-            draw(e); 
-        }
-        
-        function endPosition() { 
-            isDrawing = false; 
-            ctx.beginPath(); 
-        }
-        
-        function draw(e) {
-            if (!isDrawing) return;
-
-            e.preventDefault();
-            const rect = canvas.getBoundingClientRect();
+            // 顯示分數與評語
+            const feedback = document.getElementById('feedback-section');
+            feedback.style.display = 'block';
             
-            // Pointer Events 支援手指與滑鼠，十分穩定
-            const x = (e.clientX - rect.left) * (canvas.width / rect.width);
-            const y = (e.clientY - rect.top) * (canvas.height / rect.height);
-
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round'; 
-            
-            if (currentTool === 'eraser') {
-                ctx.globalCompositeOperation = 'destination-out';
-                ctx.lineWidth = 25; 
-                ctx.strokeStyle = 'rgba(0,0,0,1)'; 
+            let comment = "";
+            if (score === 10) {
+                comment = "🏆 太棒了！完美滿分，繼續保持！";
+                feedback.style.backgroundColor = "#d4edda";
+                feedback.style.color = "#155724";
+            } else if (score >= 7) {
+                comment = "🌟 表現得很好！看看錯在哪裡，下次一定能拿滿分！";
+                feedback.style.backgroundColor = "#cce5ff";
+                feedback.style.color = "#004085";
+            } else if (score >= 4) {
+                comment = "👍 繼續努力！留意大小寫和不規則動詞的串法喔。";
+                feedback.style.backgroundColor = "#fff3cd";
+                feedback.style.color = "#856404";
             } else {
-                ctx.globalCompositeOperation = 'source-over';
-                // 筆畫再次變幼，設定為固定粗度 1.2，適合手指默寫
-                ctx.lineWidth = 1.2;
-                ctx.strokeStyle = '#2980b9'; 
+                comment = "💪 不要灰心，多多溫習，你可以的！";
+                feedback.style.backgroundColor = "#f8d7da";
+                feedback.style.color = "#721c24";
             }
-            ctx.lineTo(x, y); 
-            ctx.stroke();
-            ctx.beginPath(); 
-            ctx.moveTo(x, y);
+
+            feedback.innerHTML = `本次得分：${score} / 10 分<br><br>${comment}`;
+        });
+
+        // 輔助功能：判斷畫布是否全白 (避免把空白格拿去 AI 辨識浪費時間)
+        function isCanvasBlank(canvas) {
+            const blank = document.createElement('canvas');
+            blank.width = canvas.width;
+            blank.height = canvas.height;
+            return canvas.toDataURL() === blank.toDataURL();
         }
 
-        function clearDrawCanvas() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            document.getElementById('canvasResult').style.display = 'none';
-            setTool('blue'); initCanvasText(false); 
-        }
+        // 網頁載入後生成表格
+        window.onload = buildTable;
 
-        // 核心 AI 分析與批改引擎
-        function processAndScoreOCR(recognizedWordsArray, container, targetCtx) {
-            let score = 0;
-            let foundWords = [];
-            let caseErrors = [];
-            let missedWords = [];
-            
-            let processedWords = recognizedWordsArray.map(w => {
-                let clean = w.text.trim();
-                clean = clean.replace(/1/g, 'l').replace(/0/g, 'o').replace(/5/g, 's');
-                clean = clean.replace(/[^a-zA-Z]/g, ''); 
-                
-                let isIgnored = ignoreWordsList.includes(clean.toLowerCase());
-                return {
-                    originalBbox: w.bbox,
-                    cleanText: clean,
-                    used: isIgnored, 
-                    isIgnored: isIgnored
-                };
-            });
-
-            wordList.forEach(wordObj => {
-                const target = wordObj.perfect;
-                let matched = false;
-
-                // A: 單獨完整對
-                for (let i = 0; i < processedWords.length; i++) {
-                    if (processedWords[i].used || processedWords[i].cleanText.length === 0) continue;
-                    
-                    let text = processedWords[i].cleanText;
-                    if (text === target) { 
-                        score++; foundWords.push(target);
-                        processedWords[i].used = true; matched = true; break;
-                    } else if (text.toLowerCase() === target.toLowerCase()) { 
-                        caseErrors.push(`<b>${text}</b> (應為 <b>${target}</b>)`);
-                        processedWords[i].used = true; matched = true; break;
-                    }
-                }
-
-                if (matched) return;
-
-                // B: 斷字縫合
-                for (let i = 0; i < processedWords.length - 1; i++) {
-                    if (processedWords[i].used) continue;
-                    
-                    let w1 = processedWords[i].cleanText;
-                    let w2 = processedWords[i+1] ? processedWords[i+1].cleanText : "";
-                    let w3 = processedWords[i+2] ? processedWords[i+2].cleanText : "";
-                    
-                    let combo2 = w1 + w2;
-                    let combo3 = w1 + w2 + w3;
-
-                    if (combo2 === target || combo3 === target) {
-                        score++; foundWords.push(target);
-                        processedWords[i].used = true; processedWords[i+1].used = true;
-                        if (combo3 === target) processedWords[i+2].used = true;
-                        matched = true; break;
-                    } else if (combo2.toLowerCase() === target.toLowerCase() || combo3.toLowerCase() === target.toLowerCase()) {
-                        caseErrors.push(`大小寫錯誤，應為 <b>${target}</b>`);
-                        processedWords[i].used = true; processedWords[i+1].used = true;
-                        if (combo3.toLowerCase() === target.toLowerCase()) processedWords[i+2].used = true;
-                        matched = true; break;
-                    }
-                }
-
-                if (!matched) missedWords.push(target);
-            });
-
-            targetCtx.save();
-            targetCtx.strokeStyle = '#e74c3c'; 
-            targetCtx.lineWidth = 3;
-            targetCtx.fillStyle = 'rgba(231, 76, 60, 0.15)';
-
-            processedWords.forEach(w => {
-                if (!w.used && !w.isIgnored && w.cleanText.length >= 1) {
-                    targetCtx.strokeRect(w.originalBbox.x0 - 2, w.originalBbox.y0 - 2, (w.originalBbox.x1 - w.originalBbox.x0) + 4, (w.originalBbox.y1 - w.originalBbox.y0) + 4);
-                    targetCtx.fillRect(w.originalBbox.x0 - 2, w.originalBbox.y0 - 2, (w.originalBbox.x1 - w.originalBbox.x0) + 4, (w.originalBbox.y1 - w.originalBbox.y0) + 4);
-                }
-            });
-            targetCtx.restore();
-
-            let feedbackHTML = `<h3>📝 AI 批改結果：</h3><p style="font-size: 1.2em;"><strong>🌟 得分： ${score} / 10</strong></p>`;
-            if (foundWords.length > 0) feedbackHTML += `<p style="color: #27ae60;">✅ <b>完全正確：</b><br>${foundWords.join(', ')}</p>`;
-            if (caseErrors.length > 0) feedbackHTML += `<p style="color: #d35400;">⚠️ <b>大小寫錯誤 (不給分)：</b><br>${caseErrors.join('<br>')}</p>`;
-            if (missedWords.length > 0) feedbackHTML += `<p style="color: #c0392b;">❌ <b>未作答或拼錯的字：</b><br>${missedWords.join(', ')}</p>`;
-            
-            container.innerHTML = feedbackHTML;
-        }
-
-        async function checkCanvasOCR() {
-            const resultBox = document.getElementById('canvasResult');
-            const btn = document.getElementById('btnCanvasOCR');
-            
-            resultBox.style.display = 'block';
-            resultBox.innerHTML = '<p class="loading">⏳ AI 正在使用斷字縫合技術閱讀你的筆跡...</p>';
-            btn.disabled = true;
-
-            try {
-                const tempCanvas = document.createElement('canvas');
-                tempCanvas.width = canvas.width; tempCanvas.height = canvas.height;
-                const tempCtx = tempCanvas.getContext('2d');
-                tempCtx.fillStyle = '#ffffff'; tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-                tempCtx.drawImage(canvas, 0, 0);
-
-                const { data: { words } } = await Tesseract.recognize(tempCanvas.toDataURL("image/png"), 'eng');
-                processAndScoreOCR(words, resultBox, ctx);
-                initCanvasText(true);
-            } catch (error) {
-                resultBox.innerHTML = `<p style="color:red;">❌ 辨識錯誤：${error.message}</p>`;
-            } finally { btn.disabled = false; }
-        }
-
-        // 綁定指標事件，支援手指觸控
-        canvas.addEventListener('pointerdown', startPosition);
-        canvas.addEventListener('pointerup', endPosition);
-        canvas.addEventListener('pointermove', draw);
-        canvas.addEventListener('pointerout', endPosition);
-        canvas.addEventListener('pointercancel', endPosition);
-
-        window.onload = () => { initTable(); initCanvasText(false); };
     </script>
 </body>
 </html>
