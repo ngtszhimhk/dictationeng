@@ -60,18 +60,18 @@
         }
         .mini-btn:hover { background-color: #e0e0e0; }
         
-        /* 四線譜背景設計 - 闊度縮短為 180px */
+        /* 四線譜背景設計 - 闊度 180px，高度增至 100px，行高更大 */
         .canvas-wrapper {
             position: relative;
             width: 180px; 
-            height: 80px;
+            height: 100px;
             background-color: #fff;
             background-image: linear-gradient(
                 to bottom,
-                transparent 15px, #ff9999 16px, /* 第一線 紅色 */
-                transparent 17px, transparent 31px, #99ccff 32px, /* 第二線 藍色 */
-                transparent 33px, transparent 47px, #99ccff 48px, /* 第三線 藍色 */
-                transparent 49px, transparent 63px, #ff9999 64px /* 第四線 紅色 */
+                transparent 19px, #ff9999 20px, /* 第一線 紅色 */
+                transparent 21px, transparent 39px, #99ccff 40px, /* 第二線 藍色 */
+                transparent 41px, transparent 59px, #99ccff 60px, /* 第三線 藍色 */
+                transparent 61px, transparent 79px, #ff9999 80px /* 第四線 紅色 */
             );
             border: 1px solid #ccc;
             border-radius: 4px;
@@ -290,7 +290,7 @@
                         <button class="mini-btn" onclick="speakWord('${answerWord}')" title="聆聽答案發音">🔊</button>
                     </div>
                     <div class="canvas-wrapper">
-                        <canvas id="canvas${index}" width="180" height="80"></canvas>
+                        <canvas id="canvas${index}" width="180" height="100"></canvas>
                     </div>
                     <span class="mark-icon" id="mark${index}"></span>
                 </div>
@@ -311,7 +311,8 @@
                 const canvas = document.getElementById(`canvas${i}`);
                 const ctx = canvas.getContext("2d", { willReadFrequently: true });
                 
-                ctx.lineWidth = 1.0; 
+                // 筆劃粗度維持 2.5
+                ctx.lineWidth = 2.5; 
                 ctx.lineCap = "round";
                 ctx.lineJoin = "round";
                 ctx.strokeStyle = "#0000ff";
@@ -349,7 +350,7 @@
                     } else {
                         ctx.globalCompositeOperation = "source-over";
                         ctx.strokeStyle = "#0000ff";
-                        ctx.lineWidth = 1.0; 
+                        ctx.lineWidth = 2.5; 
                     }
 
                     ctx.lineTo(pos.x, pos.y);
@@ -375,7 +376,7 @@
         document.getElementById('btnClear').addEventListener('click', function() {
             if(confirm("確定要清除所有內容重新默寫嗎？")) {
                 contexts.forEach(ctx => {
-                    ctx.clearRect(0, 0, 180, 80); // 清除長度更新為 180
+                    ctx.clearRect(0, 0, 180, 100);
                 });
                 document.querySelectorAll('.correct-ans-col').forEach(col => col.style.display = 'none');
                 for(let i=0; i<10; i++) {
@@ -388,28 +389,22 @@
         // 核心預處理功能：將學生畫布轉成高對比黑白圖給 AI 辨識
         function preprocessForOCR(canvas) {
             const tempCanvas = document.createElement('canvas');
-            // 為了讓字體更清晰，預處理時放大2倍
             tempCanvas.width = canvas.width * 2;
             tempCanvas.height = canvas.height * 2;
             const ctx = tempCanvas.getContext('2d');
 
-            // 1. 填滿純白背景
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
 
-            // 2. 取得原畫布像素
             const origCtx = canvas.getContext('2d');
             const imgData = origCtx.getImageData(0, 0, canvas.width, canvas.height);
             const data = imgData.data;
 
-            // 3. 繪製放大的黑色筆畫
             ctx.fillStyle = '#000000';
             for (let y = 0; y < canvas.height; y++) {
                 for (let x = 0; x < canvas.width; x++) {
                     const index = (y * canvas.width + x) * 4;
-                    // 如果該像素的透明度大於 0 (代表學生有畫過)
                     if (data[index + 3] > 0) {
-                        // 在新畫布上畫出一個 2x2 的黑色區塊 (加粗效果)
                         ctx.fillRect(x * 2, y * 2, 2, 2);
                     }
                 }
@@ -427,10 +422,8 @@
             });
 
             let score = 0;
-            // 載入 Tesseract 引擎
             const worker = await Tesseract.createWorker('eng');
             
-            // 設定 AI 只辨識英文字母，並且當作「單一單字」處理 (PSM: 8)
             await worker.setParameters({
                 tessedit_char_whitelist: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
                 tessedit_pageseg_mode: '8', 
@@ -452,7 +445,6 @@
                 let recognizedText = "";
 
                 if (!blank) {
-                    // 將原畫布轉換為高對比黑白畫布，提升辨識率
                     const processedCanvas = preprocessForOCR(canvas);
                     const { data: { text } } = await worker.recognize(processedCanvas);
                     recognizedText = text.trim().replace(/[^a-zA-Z]/g, ''); 
@@ -461,6 +453,7 @@
 
                 const markIcon = document.getElementById(`mark${i}`);
                 
+                // 嚴格比對：不再使用 toLowerCase()，大小寫必須完全相符
                 if (!blank && recognizedText === expectedAnswer) {
                     score++;
                     markIcon.innerHTML = '✔';
@@ -481,13 +474,13 @@
             
             let comment = "";
             if (score === 10) {
-                comment = "🏆 太棒了！完美滿分，繼續保持！";
+                comment = "🏆 太棒了！完美滿分，大小寫也全對，繼續保持！";
                 scoreText.style.color = "#155724";
             } else if (score >= 7) {
-                comment = "🌟 表現得很好！看看錯在哪裡，下次一定能拿滿分！";
+                comment = "🌟 表現得很好！看看錯在哪裡（留意有沒有不小心寫了大楷喔），下次一定能拿滿分！";
                 scoreText.style.color = "#004085";
             } else if (score >= 4) {
-                comment = "👍 繼續努力！留意底下動詞表裡的大小寫和不規則動詞的拼法喔。";
+                comment = "👍 繼續努力！請特別留意動詞表裡的大小寫，以及不規則動詞的拼法。";
                 scoreText.style.color = "#856404";
             } else {
                 comment = "💪 不要灰心，讓我們一起複習底下的動詞變化規律，你可以的！";
