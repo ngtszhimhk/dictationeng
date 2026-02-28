@@ -213,12 +213,11 @@
 
     <div class="container" id="part2">
         <h2>Part A: Apple Pencil 單行簿畫布版</h2>
-        <p>在下方選擇文具，並在底線上寫出對應的字母吧！</p>
+        <p>在下方選擇文具，並在空白處寫出對應的字母吧！</p>
         
         <div style="text-align: center;">
             <div class="toolbar">
-                <button class="tool-btn active" id="tool-black" onclick="setTool('black')">🖊️ 黑筆</button>
-                <button class="tool-btn" id="tool-blue" onclick="setTool('blue')">🖊️ 藍筆</button>
+                <button class="tool-btn active" id="tool-blue" onclick="setTool('blue')">🖊️ 藍筆</button>
                 <button class="tool-btn" id="tool-eraser" onclick="setTool('eraser')">🧽 膠擦</button>
             </div>
         </div>
@@ -267,6 +266,10 @@
             { present: 'get', perfect: 'got' },
             { present: 'sit', perfect: 'sat' }
         ];
+
+        // 為了讓照片上傳批改更準確，建立「要忽略的題目單字庫」
+        const ignoreWordsList = ['part', 'verb', 'table', 'regular', 'irregular', 'verbs', 'present', 'tense', 'perfect', 'has', 'have'];
+        wordList.forEach(w => ignoreWordsList.push(w.present.toLowerCase()));
 
         // 發音功能
         function speakWord(text) {
@@ -338,17 +341,15 @@
         const canvas = document.getElementById('dictationCanvas');
         const ctx = canvas.getContext('2d');
         let isDrawing = false;
-        let currentTool = 'black'; 
+        let currentTool = 'blue'; // 預設改為藍筆
 
         function setTool(tool) {
             currentTool = tool;
-            document.getElementById('tool-black').classList.remove('active');
             document.getElementById('tool-blue').classList.remove('active');
             document.getElementById('tool-eraser').classList.remove('active');
             document.getElementById(`tool-${tool}`).classList.add('active');
         }
 
-        // 獨立繪製每個部分的文字，以設定不同顏色
         function initCanvasText(showAnswers = false) {
             textCtx.clearRect(0, 0, textCanvas.width, textCanvas.height);
             textCtx.font = '18px Comic Sans MS';
@@ -357,46 +358,26 @@
             for (let i = 0; i < 5; i++) {
                 let y = 65 + (i * 80); 
                 
-                // --- 左邊欄位 ---
                 let wLeft = wordList[i];
                 let qTextLeft = `${i+1}. ${wLeft.present} ➔ `;
-                
-                // 1. 畫題目 (深色)
                 textCtx.fillStyle = '#333333';
                 textCtx.fillText(qTextLeft, leftColX, y);
                 
-                // 2. 畫輔助線 (淺灰色)
-                let qWidthLeft = textCtx.measureText(qTextLeft).width;
-                let blankLeft = wLeft.perfect.replace(/./g, '_ ');
-                textCtx.fillStyle = '#b2bec3';
-                textCtx.fillText(blankLeft, leftColX + qWidthLeft, y);
-                
-                // 3. 畫正確答案 (紅色)
                 if (showAnswers) {
-                    let bWidthLeft = textCtx.measureText(blankLeft).width;
+                    let qWidthLeft = textCtx.measureText(qTextLeft).width;
                     textCtx.fillStyle = '#e74c3c';
-                    textCtx.fillText(` ( ${wLeft.perfect} )`, leftColX + qWidthLeft + bWidthLeft, y);
+                    textCtx.fillText(` ( ${wLeft.perfect} )`, leftColX + qWidthLeft + 100, y);
                 }
                 
-                // --- 右邊欄位 ---
                 let wRight = wordList[i+5];
                 let qTextRight = `${i+6}. ${wRight.present} ➔ `;
-                
-                // 1. 畫題目 (深色)
                 textCtx.fillStyle = '#333333';
                 textCtx.fillText(qTextRight, rightColX, y);
                 
-                // 2. 畫輔助線 (淺灰色)
-                let qWidthRight = textCtx.measureText(qTextRight).width;
-                let blankRight = wRight.perfect.replace(/./g, '_ ');
-                textCtx.fillStyle = '#b2bec3';
-                textCtx.fillText(blankRight, rightColX + qWidthRight, y);
-                
-                // 3. 畫正確答案 (紅色)
                 if (showAnswers) {
-                    let bWidthRight = textCtx.measureText(blankRight).width;
+                    let qWidthRight = textCtx.measureText(qTextRight).width;
                     textCtx.fillStyle = '#e74c3c';
-                    textCtx.fillText(` ( ${wRight.perfect} )`, rightColX + qWidthRight + bWidthRight, y);
+                    textCtx.fillText(` ( ${wRight.perfect} )`, rightColX + qWidthRight + 100, y);
                 }
             }
         }
@@ -424,13 +405,10 @@
                 ctx.strokeStyle = 'rgba(0,0,0,1)'; 
             } else {
                 ctx.globalCompositeOperation = 'source-over';
-                // 加粗畫筆至 4，提升筆跡清晰度
                 ctx.lineWidth = 4;
-                if (currentTool === 'black') {
-                    ctx.strokeStyle = '#2c3e50'; 
-                } else if (currentTool === 'blue') {
-                    ctx.strokeStyle = '#2980b9'; 
-                }
+                if (currentTool === 'blue') {
+                    ctx.strokeStyle = '#2980b9'; // 藍筆顏色
+                } 
             }
             ctx.lineTo(x, y);
             ctx.stroke();
@@ -441,26 +419,28 @@
         function clearDrawCanvas() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             document.getElementById('canvasResult').style.display = 'none';
-            setTool('black');
+            setTool('blue');
             initCanvasText(false); 
         }
 
-        // --- AI 圈出錯處 ---
+        // --- AI 圈出錯處 (優化版) ---
         function highlightMistakes(targetCtx, recognizedWords) {
             const perfectWords = wordList.map(w => w.perfect);
-            const presentWords = wordList.map(w => w.present.toLowerCase());
 
             recognizedWords.forEach(w => {
                 const text = w.text.trim();
                 const cleanText = text.toLowerCase().replace(/[^a-z]/g, '');
 
-                if (!cleanText) return; 
-                if (presentWords.includes(cleanText)) return; 
+                // 1. 過濾掉太短的雜訊 (長度 < 2 的字母通常是雜訊或標點)
+                if (!cleanText || cleanText.length < 2) return; 
                 
-                if (perfectWords.includes(text)) {
-                    return; 
-                }
+                // 2. 過濾掉題目本身的單字 (避免把題目當錯字圈起來)
+                if (ignoreWordsList.includes(cleanText)) return; 
+                
+                // 3. 過濾掉完全寫對的答案
+                if (perfectWords.includes(cleanText)) return; 
 
+                // 剩下的就是錯字，畫上紅框
                 targetCtx.save();
                 targetCtx.strokeStyle = '#e74c3c'; 
                 targetCtx.lineWidth = 3;
@@ -477,27 +457,31 @@
             const btn = document.getElementById('btnCanvasOCR');
             
             resultBox.style.display = 'block';
-            resultBox.innerHTML = '<p class="loading">⏳ AI 正在閱讀你的筆跡，並用紅筆批改中...</p>';
+            resultBox.innerHTML = '<p class="loading">⏳ AI 正在單獨閱讀你的藍色筆跡，請稍候...</p>';
             btn.disabled = true;
 
             try {
-                // 注意：必須在顯示答案「之前」擷取畫布，以免 AI 辨識到正確答案
+                // 【核心優化】：只抽取「學生手寫層 (dictationCanvas)」給 AI 看
+                // 這樣 AI 就不會看到印製的題目，準確率大幅提升
                 const tempCanvas = document.createElement('canvas');
                 tempCanvas.width = canvas.width;
                 tempCanvas.height = canvas.height;
                 const tempCtx = tempCanvas.getContext('2d');
+                
+                // 先鋪上一層白底，因為 Tesseract 對透明背景辨識較差
                 tempCtx.fillStyle = '#ffffff';
                 tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-                tempCtx.drawImage(textCanvas, 0, 0);
+                
+                // 「不」畫入 textCanvas (題目層)，只畫入學生的藍筆手寫層
                 tempCtx.drawImage(canvas, 0, 0);
 
                 const dataUrl = tempCanvas.toDataURL("image/png");
                 const { data: { text, words } } = await Tesseract.recognize(dataUrl, 'eng');
                 
                 analyzeOCRText(text, resultBox);
+                // 把紅框畫在原本的畫布上
                 highlightMistakes(ctx, words);
 
-                // AI 辨識完成後，在底層畫布上印出括號內的正確答案
                 initCanvasText(true);
 
             } catch (error) {
@@ -526,7 +510,7 @@
                     
                     const resultBox = document.getElementById('uploadResult');
                     resultBox.style.display = 'block';
-                    resultBox.innerHTML = '<p class="loading">⏳ 收到圖片！AI 正在自動分析並圈出錯處，請稍候...</p>';
+                    resultBox.innerHTML = '<p class="loading">⏳ 收到圖片！AI 正在自動過濾題目並分析筆跡，請稍候...</p>';
                     document.getElementById('btnScreenshot').style.display = 'none';
                     
                     checkUploadOCR();
@@ -561,10 +545,13 @@
             let feedbackHTML = '<h3>📝 AI 批改結果：</h3>';
             let foundWords = [];
             let missedWords = [];
+            
+            // 將所有辨識到的文字轉小寫，提升比對成功率
+            const lowerRecognizedText = recognizedText.toLowerCase();
 
             wordList.forEach(word => {
                 const regex = new RegExp(`\\b${word.perfect}\\b`);
-                if (regex.test(recognizedText)) {
+                if (regex.test(lowerRecognizedText)) {
                     score++;
                     foundWords.push(word.perfect);
                 } else {
@@ -596,12 +583,10 @@
                 backgroundColor: '#ffffff',
                 scale: 2 
             }).then(canvas => {
-                // 將畫布轉換為 Blob (檔案格式)，以便給手機的分享功能使用
                 canvas.toBlob(async (blob) => {
                     const fileName = '默書成績單.png';
                     const file = new File([blob], fileName, { type: 'image/png' });
                     
-                    // 檢查裝置是否支援「系統分享」功能 (通常手機、平板都有支援)
                     if (navigator.canShare && navigator.canShare({ files: [file] })) {
                         try {
                             await navigator.share({
@@ -609,16 +594,13 @@
                                 title: '我的默書成績單',
                                 text: '這是我剛剛完成的英文默書成績！'
                             });
-                            // 分享或儲存成功後恢復按鈕狀態
                             btn.innerText = originalText;
                             btn.disabled = false;
                         } catch (err) {
-                            // 如果學生按了「取消」，或者分享失敗，就退回傳統下載模式
                             console.log("分享取消或失敗，改用傳統下載", err);
                             forceDownload(canvas.toDataURL('image/png'), fileName);
                         }
                     } else {
-                        // 如果是電腦版或不支援分享的瀏覽器，直接用傳統下載
                         forceDownload(canvas.toDataURL('image/png'), fileName);
                     }
                 }, 'image/png');
@@ -628,7 +610,6 @@
                 btn.disabled = false;
             });
 
-            // 傳統下載功能 (獨立寫成一個小函數方便呼叫)
             function forceDownload(dataUrl, filename) {
                 const link = document.createElement('a');
                 link.download = filename;
@@ -638,6 +619,15 @@
                 btn.disabled = false;
             }
         }
+
+        // 事件監聽 (畫布繪圖)
+        canvas.addEventListener('mousedown', startPosition);
+        canvas.addEventListener('mouseup', endPosition);
+        canvas.addEventListener('mousemove', draw);
+        // 支援觸控螢幕
+        canvas.addEventListener('touchstart', startPosition, {passive: false});
+        canvas.addEventListener('touchend', endPosition);
+        canvas.addEventListener('touchmove', draw, {passive: false});
 
         window.onload = () => {
             initTable();
