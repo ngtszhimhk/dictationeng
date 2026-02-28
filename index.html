@@ -23,7 +23,7 @@
         }
 
         .container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             background: white;
             padding: 30px;
@@ -116,6 +116,7 @@
             align-items: center;
             justify-content: center;
             gap: 10px;
+            transition: all 0.3s;
         }
 
         .vocab-btn:hover {
@@ -126,16 +127,30 @@
         .vocab-btn.playing {
             background-color: var(--primary-color);
             color: white;
-            animation: pulse 1s infinite;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
+            transform: scale(1.05);
+            box-shadow: 0 0 10px rgba(74, 144, 226, 0.5);
         }
 
         /* Part C Styles */
+        .passage-controls {
+            margin-bottom: 20px;
+        }
+
+        .toggle-passage-btn {
+            background-color: #9b59b6;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+
+        .toggle-passage-btn:hover {
+            background-color: #8e44ad;
+        }
+
         .passage-text {
             background-color: #f9f9f9;
             padding: 20px;
@@ -144,30 +159,76 @@
             font-size: 18px;
             line-height: 2;
             border-left: 5px solid var(--primary-color);
+            transition: all 0.3s;
         }
 
-        .player-controls {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            flex-wrap: wrap;
-            background: #eee;
+        .passage-text.hidden {
+            display: none;
+        }
+
+        .speed-control {
+            margin-bottom: 20px;
             padding: 15px;
+            background-color: #f0f4f8;
             border-radius: 8px;
         }
 
-        .control-btn {
-            background: white;
-            border: 1px solid #ccc;
-            padding: 8px 15px;
-            border-radius: 4px;
-            cursor: pointer;
+        .speed-control label {
+            font-weight: bold;
+            margin-right: 10px;
         }
-        
-        .control-btn.active {
-            background: var(--primary-color);
+
+        .speed-select {
+            padding: 8px 15px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
+
+        .word-chunks {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .chunk-btn {
+            background-color: #3498db;
             color: white;
-            border-color: var(--primary-color);
+            border: none;
+            padding: 12px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+            transition: all 0.3s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .chunk-btn:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .chunk-btn.active {
+            background-color: #e74c3c;
+            animation: pulse 0.5s;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .section-title {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            margin: 20px 0 10px 0;
+            font-weight: bold;
+            display: inline-block;
         }
 
         /* Part D (Grading) Styles */
@@ -233,6 +294,15 @@
 
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
+        .instruction {
+            background-color: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            color: #856404;
+        }
+
     </style>
 </head>
 <body>
@@ -272,7 +342,7 @@
     <div class="part-section" id="partB">
         <h2>Part B: Vocabulary (30%)</h2>
         <div class="vocab-controls">
-            <span>請點擊按鈕聽發音並默寫。</span>
+            <span>請點擊按鈕聽發音並默寫。（發音已調慢）</span>
             <button class="btn btn-shuffle" onclick="shuffleVocab()">🔀 重置隨機次序</button>
         </div>
         <div class="vocab-grid" id="vocabGrid">
@@ -283,27 +353,42 @@
     <!-- Part C -->
     <div class="part-section" id="partC">
         <h2>Part C: Passage (60%)</h2>
-        <p>請利用播放器進行讀默。你可以調整速度或重播。</p>
+        <div class="instruction">
+            💡 提示：每個按鈕讀出三個字詞（包括標點符號）。可按多次重聽。建議先隱藏文章再開始默書。
+        </div>
         
-        <div class="player-controls">
-            <button class="control-btn" onclick="speakPassage(0)">▶ 播放第一段</button>
-            <button class="control-btn" onclick="speakPassage(1)">▶ 播放第二段</button>
-            <button class="control-btn" onclick="speakPassage(2)">▶ 播放第三段</button>
-            <button class="control-btn" onclick="stopSpeaking()">⏹ 停止</button>
-            <select id="speedSelect" class="control-btn" onchange="setSpeed(this.value)">
-                <option value="0.8">慢速 (0.8x)</option>
-                <option value="1" selected>正常 (1.0x)</option>
+        <div class="passage-controls">
+            <button class="toggle-passage-btn" onclick="togglePassage()">👁️ 隱藏文章</button>
+        </div>
+
+        <div class="speed-control">
+            <label for="speedSelect">🎵 讀默速度：</label>
+            <select id="speedSelect" class="speed-select" onchange="setSpeed(this.value)">
+                <option value="0.4">超慢速 (0.4x) - 適合初學</option>
+                <option value="0.5">很慢速 (0.5x) - 適合跟讀</option>
+                <option value="0.6">慢速 (0.6x) - 適合默書</option>
+                <option value="0.7">較慢速 (0.7x)</option>
+                <option value="0.8">中慢速 (0.8x)</option>
+                <option value="0.9">稍慢速 (0.9x)</option>
+                <option value="1" selected>正常速度 (1.0x)</option>
+                <option value="1.1">稍快速 (1.1x)</option>
                 <option value="1.2">快速 (1.2x)</option>
             </select>
         </div>
 
-        <div style="margin-top: 20px; font-size: 14px; color: #666;">
-            <strong>Passage Text (for reference after dictation):</strong>
-            <div class="passage-text">
-                <p><strong>Para 1:</strong> Betty and Billy were a great help to their uncle Eddy on his big day.</p>
-                <p><strong>Para 2:</strong> It was almost time for groom Eddy to give the bride Nicole the wedding ring. He asked his brother Henry for the ring. Henry was the best man. He helped Eddy at the wedding. Henry searched in his pockets, but he could not find it.</p>
-                <p><strong>Para 3:</strong> On Chinese New Year's Eve, I visited the flower market. It was a mandarin tree. Look at the photo. The mandarin tree isn't real, but I love it. It looks very cute.</p>
-            </div>
+        <div id="passageText" class="passage-text">
+            <div class="section-title">Paragraph 1</div>
+            <p>Betty and Billy were a great help to their uncle Eddy on his big day.</p>
+            
+            <div class="section-title">Paragraph 2</div>
+            <p>It was almost time for groom Eddy to give the bride Nicole the wedding ring. He asked his brother Henry for the ring. Henry was the best man. He helped Eddy at the wedding. Henry searched in his pockets, but he could not find it.</p>
+            
+            <div class="section-title">Paragraph 3</div>
+            <p>On Chinese New Year's Eve, I visited the flower market. It was a mandarin tree. Look at the photo. The mandarin tree isn't real, but I love it. It looks very cute.</p>
+        </div>
+
+        <div id="chunkButtons">
+            <!-- Chunk buttons will be generated by JS -->
         </div>
     </div>
 
@@ -359,12 +444,12 @@
     function initVocab() {
         const grid = document.getElementById('vocabGrid');
         grid.innerHTML = '';
-        // Initialize order 0-11
         currentOrder = vocabList.map((_, i) => i);
         
         for (let i = 0; i < 12; i++) {
             const btn = document.createElement('button');
             btn.className = 'vocab-btn';
+            btn.id = `vocabBtn${i}`;
             btn.innerHTML = `<span>${i + 1}</span>`;
             btn.onclick = () => playWord(i, btn);
             grid.appendChild(btn);
@@ -372,7 +457,6 @@
     }
 
     function shuffleVocab() {
-        // Fisher-Yates shuffle
         for (let i = currentOrder.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [currentOrder[i], currentOrder[j]] = [currentOrder[j], currentOrder[i]];
@@ -381,19 +465,17 @@
     }
 
     function playWord(btnIndex, btnElement) {
-        // Get the actual word based on shuffled order
         const wordIndex = currentOrder[btnIndex];
         const word = vocabList[wordIndex];
         
-        // Visual feedback
-        document.querySelectorAll('.vocab-btn').forEach(b => b.classList.remove('playing'));
+        // Visual feedback - can be clicked multiple times
         btnElement.classList.add('playing');
-        setTimeout(() => btnElement.classList.remove('playing'), 1000);
+        setTimeout(() => btnElement.classList.remove('playing'), 800);
 
-        // Speak
+        // Speak with slower speed and British English
         const utterance = new SpeechSynthesisUtterance(word);
-        utterance.lang = 'en-US'; // or en-GB
-        utterance.rate = 0.9;
+        utterance.lang = 'en-GB'; // British English
+        utterance.rate = 0.6; // Slower speed for Part B
         window.speechSynthesis.speak(utterance);
     }
 
@@ -423,29 +505,110 @@
     }
 
     // --- Part C Logic ---
-    const passages = [
-        "Betty and Billy were a great help to their uncle Eddy on his big day.",
-        "It was almost time for groom Eddy to give the bride Nicole the wedding ring. He asked his brother Henry for the ring. Henry was the best man. He helped Eddy at the wedding. Henry searched in his pockets, but he could not find it.",
-        "On Chinese New Year's Eve, I visited the flower market. It was a mandarin tree. Look at the photo. The mandarin tree isn't real, but I love it. It looks very cute."
+    // Break passages into 3-word chunks with punctuation
+    const passageChunks = [
+        // Paragraph 1
+        { section: "Paragraph 1", chunks: [
+            "Betty and Billy",
+            "were a great",
+            "help to their",
+            "uncle Eddy on",
+            "his big day."
+        ]},
+        // Paragraph 2
+        { section: "Paragraph 2", chunks: [
+            "It was almost",
+            "time for groom",
+            "Eddy to give",
+            "the bride Nicole",
+            "the wedding ring.",
+            "He asked his",
+            "brother Henry for",
+            "the ring. Henry",
+            "was the best",
+            "man. He helped",
+            "Eddy at the",
+            "wedding. Henry",
+            "searched in his",
+            "pockets, but he",
+            "could not find",
+            "it."
+        ]},
+        // Paragraph 3
+        { section: "Paragraph 3", chunks: [
+            "On Chinese New",
+            "Year's Eve, I",
+            "visited the flower",
+            "market. It was",
+            "a mandarin tree.",
+            "Look at the",
+            "photo. The mandarin",
+            "tree isn't real,",
+            "but I love",
+            "it. It looks",
+            "very cute."
+        ]}
     ];
 
-    let currentRate = 1;
+    let currentRate = 0.6; // Default slower speed
 
     function setSpeed(val) {
         currentRate = parseFloat(val);
     }
 
-    function speakPassage(index) {
-        window.speechSynthesis.cancel(); // Stop previous
-        const text = passages[index];
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'en-US';
-        utterance.rate = currentRate;
-        window.speechSynthesis.speak(utterance);
+    function togglePassage() {
+        const passageDiv = document.getElementById('passageText');
+        const btn = document.querySelector('.toggle-passage-btn');
+        
+        if (passageDiv.classList.contains('hidden')) {
+            passageDiv.classList.remove('hidden');
+            btn.innerHTML = '🙈 隱藏文章';
+            btn.style.backgroundColor = '#9b59b6';
+        } else {
+            passageDiv.classList.add('hidden');
+            btn.innerHTML = '👁️ 顯示文章';
+            btn.style.backgroundColor = '#e74c3c';
+        }
     }
 
-    function stopSpeaking() {
-        window.speechSynthesis.cancel();
+    function initChunkButtons() {
+        const container = document.getElementById('chunkButtons');
+        container.innerHTML = '';
+        
+        passageChunks.forEach((para, paraIndex) => {
+            // Add section title
+            const sectionTitle = document.createElement('div');
+            sectionTitle.className = 'section-title';
+            sectionTitle.textContent = para.section;
+            container.appendChild(sectionTitle);
+            
+            // Add chunk buttons
+            const chunksDiv = document.createElement('div');
+            chunksDiv.className = 'word-chunks';
+            
+            para.chunks.forEach((chunk, chunkIndex) => {
+                const btn = document.createElement('button');
+                btn.className = 'chunk-btn';
+                btn.id = `chunkBtn-${paraIndex}-${chunkIndex}`;
+                btn.textContent = chunk;
+                btn.onclick = () => playChunk(chunk, btn);
+                chunksDiv.appendChild(btn);
+            });
+            
+            container.appendChild(chunksDiv);
+        });
+    }
+
+    function playChunk(text, btnElement) {
+        // Visual feedback - can be clicked multiple times
+        btnElement.classList.add('active');
+        setTimeout(() => btnElement.classList.remove('active'), 500);
+
+        // Speak with British English and selected speed
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'en-GB'; // British English
+        utterance.rate = currentRate;
+        window.speechSynthesis.speak(utterance);
     }
 
     // --- Part D (Grading) Logic ---
@@ -466,33 +629,32 @@
     }
 
     function calculateAndShowScore() {
-        // Since we cannot actually OCR handwriting in a simple HTML file without a backend API,
-        // we will simulate a realistic grading based on the rules provided.
-        // In a real app, this would send the image to a server.
-        
-        // Mock Scoring Logic for Demo:
         // Part A: Check inputs from Part A section
         let partAScore = 0;
         const inputs = document.querySelectorAll('#partA input');
+        let hasUserInput = false;
+        
         inputs.forEach(input => {
-            if (input.value.trim().toLowerCase() === input.getAttribute('data-ans').toLowerCase()) {
-                partAScore += 1;
+            if (input.value.trim() !== "") {
+                hasUserInput = true;
+                if (input.value.trim().toLowerCase() === input.getAttribute('data-ans').toLowerCase()) {
+                    partAScore += 1;
+                }
             }
         });
-        // If user didn't fill Part A on screen, assume random score for demo purposes if they just uploaded photo
-        if (partAScore === 0 && inputs[0].value === "") {
-             partAScore = Math.floor(Math.random() * 4) + 7; // Random between 7-10 for demo
+        
+        // If no input, generate random score for demo
+        if (!hasUserInput) {
+            partAScore = Math.floor(Math.random() * 4) + 6; // 6-9 for demo
         }
 
         // Part B: Mock score (Max 36)
-        // Let's assume student made 1-2 mistakes usually
         const partBErrors = Math.floor(Math.random() * 3); // 0, 1, or 2 errors
         const partBScore = 36 - (partBErrors * 3);
 
         // Part C: Mock score (Max 60, -3 per error)
-        // Let's assume student made 2-5 errors
-        const partCErrors = Math.floor(Math.random() * 4) + 2; // 2 to 5 errors
-        const partCScore = 60 - (partCErrors * 3);
+        const partCErrors = Math.floor(Math.random() * 5) + 2; // 2 to 6 errors
+        const partCScore = Math.max(0, 60 - (partCErrors * 3));
 
         const totalScore = partAScore + partBScore + partCScore;
 
@@ -504,29 +666,27 @@
 
         // Generate Suggestions
         let suggestions = [];
-        if (partAScore < 10) suggestions.push("Part A: 請複習 irregular verbs (如 ride->ridden, eat->eaten)。");
-        if (partBScore < 36) suggestions.push("Part B: 注意拼寫，特別是 'reunion dinner' 和 'turnip cakes'。");
-        if (partCScore < 60) suggestions.push("Part C: 注意標點符號和大寫字母 (如 Chinese New Year's Eve)。");
-        if (suggestions.length === 0) suggestions.push("做得很好！保持這個水準！");
+        if (partAScore < 10) suggestions.push("• Part A: 請複習 irregular verbs (如 ride→ridden, eat→eaten, take→taken)");
+        if (partBScore < 36) suggestions.push("• Part B: 注意拼寫，特別是 'reunion dinner' 和 'turnip cakes' 兩個詞組");
+        if (partCScore < 60) suggestions.push("• Part C: 注意標點符號、大寫字母 (如 Chinese New Year's Eve) 和單複數");
+        if (totalScore < 60) suggestions.push("• 建議多聽錄音跟讀，並加強基本詞彙拼寫練習");
+        if (suggestions.length === 0) suggestions.push("• 做得很好！保持這個水準！繼續努力！");
 
-        document.getElementById('suggestionText').innerHTML = "<strong>改善建議：</strong><br>" + suggestions.join("<br>");
+        document.getElementById('suggestionText').innerHTML = "<strong>改善建議：</strong><br><br>" + suggestions.join("<br>");
 
         document.getElementById('resultBox').style.display = 'block';
-        
-        // Scroll to result
         document.getElementById('resultBox').scrollIntoView({behavior: "smooth"});
     }
 
     function resetGrading() {
         document.getElementById('resultBox').style.display = 'none';
         document.getElementById('fileInput').value = "";
-        // Clear Part A inputs for a fresh start if desired, or keep them
-        // document.querySelectorAll('#partA input').forEach(i => i.value = '');
     }
 
     // Initialize
     window.onload = function() {
         initVocab();
+        initChunkButtons();
     };
 
 </script>
