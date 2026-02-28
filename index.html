@@ -2,550 +2,426 @@
 <html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>小五英文默書 - Verb Table</title>
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>英文默書練習 - 編程設計：伍子謙老師</title>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, "微軟正黑體";
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
             padding: 20px;
-            background-color: #f9f9f9;
             color: #333;
         }
-        h2 {
+        .header {
             text-align: center;
+            background-color: #4CAF50;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-        .table-container {
-            display: flex;
-            justify-content: center;
-            overflow-x: auto;
+        .header h1 {
+            margin: 0;
+            font-size: 1.8em;
+        }
+        .header h2 {
+            margin: 10px 0 0 0;
+            font-size: 1.2em;
+            font-weight: normal;
         }
         table {
+            width: 100%;
             border-collapse: collapse;
-            background-color: white;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
+            background: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         th, td {
-            border: 1px solid #666;
-            padding: 10px;
-            text-align: left;
+            border: 1px solid #ddd;
+            padding: 15px;
+            text-align: center;
             vertical-align: middle;
-            font-size: 18px;
         }
         th {
-            background-color: #e0e0e0;
-            text-align: center;
+            background-color: #f2f2f2;
+            font-size: 1.1em;
         }
-        
-        /* 迷你工具列與畫布排版 */
-        .canvas-cell-container {
-            display: flex;
-            align-items: center;
+        .word-cell {
+            font-size: 1.2em;
+            font-weight: bold;
         }
-        .mini-tools {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            margin-right: 8px;
-        }
-        .mini-btn {
-            background-color: #f0f0f0;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            cursor: pointer;
-            padding: 2px 4px;
-            font-size: 14px;
-            transition: 0.2s;
-        }
-        .mini-btn:hover { background-color: #e0e0e0; }
-        
-        /* 四線譜背景設計 - 闊度 180px，高度增至 100px，行高更大 */
+        /* 四線譜畫布設計 (內高100px) */
         .canvas-wrapper {
             position: relative;
-            width: 180px; 
-            height: 100px;
-            background-color: #fff;
-            background-image: linear-gradient(
-                to bottom,
-                transparent 19px, #ff9999 20px, /* 第一線 紅色 */
-                transparent 21px, transparent 39px, #99ccff 40px, /* 第二線 藍色 */
-                transparent 41px, transparent 59px, #99ccff 60px, /* 第三線 藍色 */
-                transparent 61px, transparent 79px, #ff9999 80px /* 第四線 紅色 */
-            );
-            border: 1px solid #ccc;
-            border-radius: 4px;
+            display: inline-block;
+        }
+        .canvas-container {
+            width: 400px; /* 確保夠闊寫字 */
+            height: 300px; /* 3個間距，每個100px */
+            background-color: transparent;
+            /* 繪製四線譜的線條 */
+            background-image: 
+                linear-gradient(transparent 98px, #ff9999 99px, #ff9999 100px, transparent 101px),
+                linear-gradient(transparent 198px, #99ccff 199px, #99ccff 200px, transparent 201px);
+            border-top: 2px solid #ff9999;
+            border-bottom: 2px solid #ff9999;
+            box-sizing: border-box;
+            position: relative;
         }
         canvas {
             position: absolute;
             top: 0;
             left: 0;
+            width: 100%;
+            height: 100%;
+            touch-action: none; /* 防止觸控時螢幕滾動 */
             cursor: crosshair;
-            touch-action: none;
         }
-        
-        .correct-ans-col {
-            display: none; 
-            color: #0056b3;
-            font-weight: bold;
-            background-color: #f0f8ff;
-            text-align: center;
+        .icon-btn {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            margin: 0 5px;
+            transition: transform 0.2s;
         }
-        .mark-icon {
-            font-size: 24px;
-            font-weight: bold;
+        .icon-btn:hover {
+            transform: scale(1.2);
+        }
+        .active-tool {
+            background-color: #e0f7fa;
+            border-radius: 5px;
+            border: 1px solid #00bcd4;
+        }
+        .result-icon {
+            font-size: 2em;
             margin-left: 10px;
-            vertical-align: middle;
+            vertical-align: top;
             display: inline-block;
-            width: 25px;
+            margin-top: 120px;
         }
-        .tick { color: #28a745; }
-        .cross { color: #dc3545; }
-        
+        .correct-answer-col {
+            color: #d32f2f;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
         .controls {
             text-align: center;
-            margin: 20px 0;
+            margin: 30px 0;
         }
-        .main-btn {
-            padding: 10px 20px;
-            font-size: 16px;
-            margin: 0 5px;
-            cursor: pointer;
+        .controls button {
+            font-size: 1.2em;
+            padding: 10px 30px;
+            margin: 0 10px;
             border: none;
             border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            transition: background 0.3s;
+        }
+        #btn-grade {
+            background-color: #2196F3;
             color: white;
-            transition: 0.3s;
         }
-        #btnGrade { background-color: #28a745; font-weight: bold; }
-        #btnClear { background-color: #dc3545; }
-        .main-btn:hover { opacity: 0.8; }
-
+        #btn-grade:hover { background-color: #1976D2; }
+        #btn-grade:disabled { background-color: #90CAF9; cursor: not-allowed; }
+        #btn-clear {
+            background-color: #ff9800;
+            color: white;
+        }
+        #btn-clear:hover { background-color: #f57c00; }
+        
         #feedback-section {
-            font-size: 18px;
-            margin-top: 20px;
+            background: white;
             padding: 20px;
-            border-radius: 8px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 40px;
             display: none;
-            background-color: #f8f9fa;
-            border: 1px solid #dee2e6;
         }
-        .score-title {
-            text-align: center;
-            font-size: 24px;
+        .score-display {
+            font-size: 1.5em;
+            color: #d32f2f;
             font-weight: bold;
-            margin-bottom: 15px;
-        }
-        .rules-table {
-            width: 100%;
-            margin-top: 15px;
-            border-collapse: collapse;
-            font-size: 16px;
-            background-color: white;
-        }
-        .rules-table th, .rules-table td {
-            border: 1px solid #ccc;
-            padding: 8px;
-            text-align: left;
-        }
-        .rules-table th {
-            background-color: #e9ecef;
             text-align: center;
         }
-        #loading {
-            display: none;
-            text-align: center;
-            font-size: 18px;
-            color: #d39e00;
-            font-weight: bold;
-            margin-top: 10px;
+        .grammar-tips {
+            background-color: #e3f2fd;
+            padding: 15px;
+            border-left: 5px solid #2196F3;
+            margin: 20px 0;
+            border-radius: 4px;
         }
     </style>
 </head>
 <body>
 
-    <h2>Part A: Verb table (regular / irregular verbs) (10%)</h2>
-
-    <div class="table-container">
-        <table id="verbTable">
-            <thead>
-                <tr>
-                    <th>Present tense</th>
-                    <th>Present Perfect<br>(has/have)</th>
-                    <th class="correct-ans-col">Correct Answer</th>
-                    <th>Present tense</th>
-                    <th>Present Perfect<br>(has/have)</th>
-                    <th class="correct-ans-col">Correct Answer</th>
-                </tr>
-            </thead>
-            <tbody>
-                </tbody>
-        </table>
+    <div class="header">
+        <h1>編程設計：伍子謙老師</h1>
+        <h2>Part A: Verb table (regular / irregular verbs) (10%)</h2>
     </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>No.</th>
+                <th>Present tense</th>
+                <th>工具</th>
+                <th>Present Perfect (has/have) - 請在格內默寫</th>
+                <th>正確答案對照</th>
+            </tr>
+        </thead>
+        <tbody id="exercise-body">
+            </tbody>
+    </table>
 
     <div class="controls">
-        <button id="btnGrade" class="main-btn">🤖 AI 自動批改</button>
-        <button id="btnClear" class="main-btn">🗑️ 清屏重默</button>
+        <button id="btn-grade">🤖 AI自動批改</button>
+        <button id="btn-clear">🔄 清屏重默</button>
     </div>
 
-    <div id="loading">⏳ AI 正在幫你戴上放大鏡仔細看，可能需要 15-20 秒，請耐心稍候...</div>
     <div id="feedback-section">
-        <div class="score-title" id="score-text"></div>
-        <div id="comment-text" style="text-align: center; margin-bottom: 20px;"></div>
+        <div class="score-display">總分：<span id="score-text">0</span> / 10</div>
         
-        <h3 style="color: #495057; border-bottom: 2px solid #ccc; padding-bottom: 5px;">💡 動詞變化小複習 (Rules Revision)</h3>
-        <p>記住 Present tense（現在式）變成 Present Perfect（現在完成式）的動詞變化規律喔：</p>
-        <table class="rules-table" id="rulesTable">
-            <thead>
-                <tr>
-                    <th>題號</th>
-                    <th>Present tense</th>
-                    <th>Present Perfect</th>
-                    <th>變化規則 (Rule)</th>
-                </tr>
-            </thead>
-            <tbody>
-                </tbody>
-        </table>
+        <div class="grammar-tips">
+            <h3>💡 老師小提醒：Present tense vs Present Perfect</h3>
+            <p><strong>Present tense (現在式)</strong> 用來表達日常習慣或事實。例如："I <strong>study</strong> every day."</p>
+            <p><strong>Present Perfect (現在完成式)</strong> 結構是 <em>has/have + 過去分詞 (Past Participle)</em>，用來表達過去發生且對現在有影響的動作，或一直持續到現在的經驗。例如："I have <strong>studied</strong>."</p>
+            <p><strong>動詞變化規律：</strong></p>
+            <ul>
+                <li>一般規則：直接加 <strong>-ed</strong> (例如：ask → asked)</li>
+                <li>字尾是子音+y：去掉 y 加 <strong>-ied</strong> (例如：study → studied)</li>
+                <li>不規則變化：必須背誦 (例如：eat → eaten)</li>
+            </ul>
+        </div>
+
+        <div id="detailed-feedback"></div>
     </div>
 
     <script>
-        const verbsData = [
-            { num: "1.", tense: "ask", perfect: "asked", rule: "直接加 <b>+ ed</b>" },
-            { num: "6.", tense: "eat", perfect: "eaten", rule: "不規則變化 (eat ➔ eaten)" },
-            { num: "2.", tense: "look", perfect: "looked", rule: "直接加 <b>+ ed</b>" },
-            { num: "7.", tense: "ride", perfect: "ridden", rule: "不規則變化 (ride ➔ ridden)" },
-            { num: "3.", tense: "shout", perfect: "shouted", rule: "直接加 <b>+ ed</b>" },
-            { num: "8.", tense: "take", perfect: "taken", rule: "不規則變化 (take ➔ taken)" },
-            { num: "4.", tense: "tidy", perfect: "tidied", rule: "以子音+y結尾：<b>去 y 加 ied</b>" },
-            { num: "9.", tense: "get", perfect: "got", rule: "不規則變化 (get ➔ got)" },
-            { num: "5.", tense: "study", perfect: "studied", rule: "以子音+y結尾：<b>去 y 加 ied</b>" },
-            { num: "10.", tense: "sit", perfect: "sat", rule: "不規則變化 (sit ➔ sat)" }
+        // 修正了原圖中第8題重複的編號問題（get改為9）
+        const words = [
+            { id: 1, present: "ask", perfect: "asked", rule: "規則變化：字尾直接加 -ed" },
+            { id: 2, present: "look", perfect: "looked", rule: "規則變化：字尾直接加 -ed" },
+            { id: 3, present: "shout", perfect: "shouted", rule: "規則變化：字尾直接加 -ed" },
+            { id: 4, present: "tidy", perfect: "tidied", rule: "規則變化：字尾是子音+y，去y加 -ied" },
+            { id: 5, present: "study", perfect: "studied", rule: "規則變化：字尾是子音+y，去y加 -ied" },
+            { id: 6, present: "eat", perfect: "eaten", rule: "不規則變化" },
+            { id: 7, present: "ride", perfect: "ridden", rule: "不規則變化" },
+            { id: 8, present: "take", perfect: "taken", rule: "不規則變化" },
+            { id: 9, present: "get", perfect: "got", rule: "不規則變化" },
+            { id: 10, present: "sit", perfect: "sat", rule: "不規則變化" }
         ];
 
-        let canvases = [];
-        let contexts = [];
-        let currentTool = 'pen'; 
+        const tbody = document.getElementById('exercise-body');
+        const contexts = {}; // 儲存畫布的 context
 
-        function speakWord(word) {
-            const utterance = new SpeechSynthesisUtterance(word);
-            utterance.lang = 'en-GB'; 
-            utterance.rate = 0.85;    
+        // 語音發音功能
+        function speak(text) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
             window.speechSynthesis.speak(utterance);
         }
 
-        function setTool(tool) {
-            currentTool = tool;
-        }
-
-        function buildTable() {
-            const tbody = document.querySelector("#verbTable tbody");
-            const rulesTbody = document.querySelector("#rulesTable tbody");
-
-            for (let i = 0; i < 5; i++) {
-                const tr = document.createElement("tr");
-                
-                const leftItem = verbsData[i * 2];
-                tr.appendChild(createTenseCell(leftItem.num, leftItem.tense));
-                tr.appendChild(createCanvasCell(i * 2, leftItem.perfect));
-                tr.appendChild(createAnswerCell(leftItem.perfect, i * 2));
-
-                const rightItem = verbsData[i * 2 + 1];
-                tr.appendChild(createTenseCell(rightItem.num, rightItem.tense));
-                tr.appendChild(createCanvasCell(i * 2 + 1, rightItem.perfect));
-                tr.appendChild(createAnswerCell(rightItem.perfect, i * 2 + 1));
-
-                tbody.appendChild(tr);
-            }
-            
-            verbsData.sort((a, b) => parseInt(a.num) - parseInt(b.num)).forEach(item => {
-                const tr = document.createElement("tr");
-                tr.innerHTML = `
-                    <td style="text-align:center;">${item.num}</td>
-                    <td>${item.tense}</td>
-                    <td><b>${item.perfect}</b></td>
-                    <td>${item.rule}</td>
-                `;
-                rulesTbody.appendChild(tr);
-            });
-
-            initCanvases();
-        }
-
-        function createTenseCell(num, word) {
-            const td = document.createElement("td");
-            td.innerHTML = `
-                ${num} ${word} 
-                <button class="mini-btn" onclick="speakWord('${word}')" title="聆聽發音">🔊</button>
-            `;
-            return td;
-        }
-
-        function createCanvasCell(index, answerWord) {
-            const td = document.createElement("td");
-            td.innerHTML = `
-                <div class="canvas-cell-container">
-                    <div class="mini-tools">
-                        <button class="mini-btn pen-btn" onclick="setTool('pen')" title="藍筆">✏️</button>
-                        <button class="mini-btn eraser-btn" onclick="setTool('eraser')" title="膠擦">🧽</button>
-                        <button class="mini-btn" onclick="speakWord('${answerWord}')" title="聆聽答案發音">🔊</button>
-                    </div>
+        // 初始化表格與畫布
+        words.forEach(word => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${word.id}</td>
+                <td class="word-cell">
+                    ${word.present} 
+                    <button class="icon-btn" onclick="speak('${word.present}')" title="讀出 Present tense">🔊</button>
+                </td>
+                <td>
+                    <button class="icon-btn" onclick="speak('${word.perfect}')" title="讀出答案發音">🔊</button><br>
+                    <button class="icon-btn tool-pen active-tool" data-id="${word.id}" title="藍筆">🖊️</button><br>
+                    <button class="icon-btn tool-eraser" data-id="${word.id}" title="迷你膠擦">🧽</button>
+                </td>
+                <td>
                     <div class="canvas-wrapper">
-                        <canvas id="canvas${index}" width="180" height="100"></canvas>
+                        <div class="canvas-container">
+                            <canvas id="canvas-${word.id}" width="400" height="300"></canvas>
+                        </div>
+                        <span class="result-icon" id="icon-${word.id}"></span>
                     </div>
-                    <span class="mark-icon" id="mark${index}"></span>
-                </div>
+                </td>
+                <td class="correct-answer-col" id="correct-${word.id}"></td>
             `;
-            return td;
-        }
+            tbody.appendChild(tr);
 
-        function createAnswerCell(answer, index) {
-            const td = document.createElement("td");
-            td.className = "correct-ans-col ans-cell";
-            td.id = `ans${index}`;
-            td.innerText = answer;
-            return td;
-        }
+            // 設定畫布繪圖功能
+            const canvas = document.getElementById(`canvas-${word.id}`);
+            const ctx = canvas.getContext('2d');
+            contexts[word.id] = ctx;
+            
+            // 預設藍筆設定
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = '#0000FF';
 
-        function initCanvases() {
-            for (let i = 0; i < 10; i++) {
-                const canvas = document.getElementById(`canvas${i}`);
-                const ctx = canvas.getContext("2d", { willReadFrequently: true });
+            let isDrawing = false;
+
+            const startPosition = (e) => {
+                isDrawing = true;
+                draw(e);
+            };
+
+            const endPosition = () => {
+                isDrawing = false;
+                ctx.beginPath();
+            };
+
+            const draw = (e) => {
+                if (!isDrawing) return;
+                e.preventDefault(); // 防止手機滑動
                 
-                // 筆劃粗度維持 2.5
-                ctx.lineWidth = 2.5; 
-                ctx.lineCap = "round";
-                ctx.lineJoin = "round";
-                ctx.strokeStyle = "#0000ff";
+                const rect = canvas.getBoundingClientRect();
+                // 支援滑鼠與觸控
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
                 
-                canvases[i] = canvas;
-                contexts[i] = ctx;
+                const x = clientX - rect.left;
+                const y = clientY - rect.top;
 
-                let isDrawing = false;
-                let lastX = 0;
-                let lastY = 0;
+                ctx.lineTo(x, y);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+            };
 
-                function getPos(e) {
-                    const rect = canvas.getBoundingClientRect();
-                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                    return { x: clientX - rect.left, y: clientY - rect.top };
-                }
+            canvas.addEventListener('mousedown', startPosition);
+            canvas.addEventListener('mouseup', endPosition);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseout', endPosition);
 
-                function startDrawing(e) {
-                    isDrawing = true;
-                    const pos = getPos(e);
-                    lastX = pos.x; lastY = pos.y;
-                    ctx.beginPath();
-                    ctx.moveTo(lastX, lastY);
-                }
+            // 觸控事件
+            canvas.addEventListener('touchstart', startPosition, { passive: false });
+            canvas.addEventListener('touchend', endPosition);
+            canvas.addEventListener('touchmove', draw, { passive: false });
+        });
 
-                function draw(e) {
-                    if (!isDrawing) return;
-                    e.preventDefault(); 
-                    const pos = getPos(e);
+        // 綁定工具按鈕 (藍筆 / 膠擦)
+        document.querySelectorAll('.tool-pen').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = e.currentTarget.getAttribute('data-id');
+                const ctx = contexts[id];
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.strokeStyle = '#0000FF';
+                ctx.lineWidth = 4;
+                
+                // UI 更新
+                document.querySelector(`.tool-eraser[data-id="${id}"]`).classList.remove('active-tool');
+                e.currentTarget.classList.add('active-tool');
+            });
+        });
+
+        document.querySelectorAll('.tool-eraser').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = e.currentTarget.getAttribute('data-id');
+                const ctx = contexts[id];
+                // 使用 destination-out 實現真實擦除效果，不影響背景的 CSS 四線譜
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.lineWidth = 30; // 膠擦範圍大一點
+                
+                // UI 更新
+                document.querySelector(`.tool-pen[data-id="${id}"]`).classList.remove('active-tool');
+                e.currentTarget.classList.add('active-tool');
+            });
+        });
+
+        // AI 自動批改功能 (使用 Tesseract.js)
+        document.getElementById('btn-grade').addEventListener('click', async () => {
+            const btn = document.getElementById('btn-grade');
+            btn.disabled = true;
+            btn.innerText = "🔄 AI 正在辨識手寫字跡，請稍候...";
+            
+            let score = 0;
+            let feedbackHTML = "<ul>";
+
+            for (let i = 0; i < words.length; i++) {
+                const word = words[i];
+                const canvas = document.getElementById(`canvas-${word.id}`);
+                
+                // 為了讓 OCR 準確，需要建立一個白色背景的臨時畫布來合併學生的筆跡
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = canvas.width;
+                tempCanvas.height = canvas.height;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.fillStyle = '#FFFFFF';
+                tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                tempCtx.drawImage(canvas, 0, 0);
+
+                // 取得影像數據交給 Tesseract
+                const dataUrl = tempCanvas.toDataURL('image/png');
+                
+                try {
+                    const result = await Tesseract.recognize(dataUrl, 'eng');
+                    // 移除所有空白，避免 OCR 產生多餘空白，並嚴格保留大小寫
+                    const recognizedText = result.data.text.replace(/\s+/g, ''); 
+                    const correctAns = word.perfect;
                     
-                    if (currentTool === 'eraser') {
-                        ctx.globalCompositeOperation = "destination-out";
-                        ctx.lineWidth = 15; 
+                    // 嚴格比對 (大小寫必須完全一致)
+                    const isCorrect = (recognizedText === correctAns);
+
+                    // 顯示 Tick 或 Cross
+                    const iconEl = document.getElementById(`icon-${word.id}`);
+                    iconEl.innerHTML = isCorrect ? '✔️' : '❌';
+                    iconEl.style.color = isCorrect ? 'green' : 'red';
+
+                    // 顯示右側正確答案
+                    document.getElementById(`correct-${word.id}`).innerText = correctAns;
+
+                    if (isCorrect) {
+                        score++;
                     } else {
-                        ctx.globalCompositeOperation = "source-over";
-                        ctx.strokeStyle = "#0000ff";
-                        ctx.lineWidth = 2.5; 
+                        feedbackHTML += `<li><strong>第 ${word.id} 題 (${word.present})：</strong><br> 
+                        AI 辨識你的字跡為「<span style="color:red">${recognizedText || "(空白)"}</span>」。<br>
+                        正確答案是「<span style="color:green">${correctAns}</span>」。<br>
+                        <small>📝 變化規則：${word.rule}</small></li><br>`;
                     }
-
-                    ctx.lineTo(pos.x, pos.y);
-                    ctx.stroke();
-                    lastX = pos.x; lastY = pos.y;
+                } catch (error) {
+                    console.error("OCR 錯誤:", error);
                 }
-
-                function stopDrawing() {
-                    isDrawing = false;
-                }
-
-                canvas.addEventListener('mousedown', startDrawing);
-                canvas.addEventListener('mousemove', draw);
-                canvas.addEventListener('mouseup', stopDrawing);
-                canvas.addEventListener('mouseout', stopDrawing);
-
-                canvas.addEventListener('touchstart', startDrawing);
-                canvas.addEventListener('touchmove', draw, {passive: false});
-                canvas.addEventListener('touchend', stopDrawing);
             }
-        }
 
-        document.getElementById('btnClear').addEventListener('click', function() {
-            if(confirm("確定要清除所有內容重新默寫嗎？")) {
-                contexts.forEach(ctx => {
-                    ctx.clearRect(0, 0, 180, 100);
+            feedbackHTML += "</ul>";
+            if (score === 10) {
+                feedbackHTML = "<h3>🎉 太棒了！全部正確！AI 給你 100 分！</h3>";
+            }
+
+            // 顯示結果與回饋
+            document.getElementById('score-text').innerText = score;
+            document.getElementById('detailed-feedback').innerHTML = feedbackHTML;
+            document.getElementById('feedback-section').style.display = 'block';
+
+            btn.disabled = false;
+            btn.innerText = "🤖 AI自動批改";
+        });
+
+        // 清屏重默功能
+        document.getElementById('btn-clear').addEventListener('click', () => {
+            if(confirm("確定要清除所有筆跡重新開始嗎？")) {
+                words.forEach(word => {
+                    const canvas = document.getElementById(`canvas-${word.id}`);
+                    const ctx = contexts[word.id];
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    
+                    document.getElementById(`icon-${word.id}`).innerHTML = '';
+                    document.getElementById(`correct-${word.id}`).innerText = '';
+                    
+                    // 重設回藍筆
+                    ctx.globalCompositeOperation = 'source-over';
+                    ctx.strokeStyle = '#0000FF';
+                    ctx.lineWidth = 4;
+                    document.querySelector(`.tool-eraser[data-id="${word.id}"]`).classList.remove('active-tool');
+                    document.querySelector(`.tool-pen[data-id="${word.id}"]`).classList.add('active-tool');
                 });
-                document.querySelectorAll('.correct-ans-col').forEach(col => col.style.display = 'none');
-                for(let i=0; i<10; i++) {
-                    document.getElementById(`mark${i}`).innerHTML = '';
-                }
+                
                 document.getElementById('feedback-section').style.display = 'none';
             }
         });
-
-        // 🔥 終極預處理：自動裁切邊界、置中留白、加粗像素
-        function preprocessForOCR(canvas) {
-            const width = canvas.width;
-            const height = canvas.height;
-            const origCtx = canvas.getContext('2d');
-            const imgData = origCtx.getImageData(0, 0, width, height);
-            const data = imgData.data;
-
-            // 1. 尋找筆跡的邊界 (Bounding Box)
-            let minX = width, minY = height, maxX = 0, maxY = 0;
-            let hasPixel = false;
-
-            for (let y = 0; y < height; y++) {
-                for (let x = 0; x < width; x++) {
-                    // 檢查透明度 (alpha)，只抓取學生畫的藍線 (忽略背景圖)
-                    const alpha = data[(y * width + x) * 4 + 3];
-                    if (alpha > 10) { 
-                        if (x < minX) minX = x;
-                        if (x > maxX) maxX = x;
-                        if (y < minY) minY = y;
-                        if (y > maxY) maxY = y;
-                        hasPixel = true;
-                    }
-                }
-            }
-
-            if (!hasPixel) return canvas; // 如果完全空白就直接回傳
-
-            // 2. 裁切區域稍微加上 padding
-            const pad = 5;
-            minX = Math.max(0, minX - pad);
-            minY = Math.max(0, minY - pad);
-            maxX = Math.min(width, maxX + pad);
-            maxY = Math.min(height, maxY + pad);
-
-            const cropW = maxX - minX;
-            const cropH = maxY - minY;
-
-            // 3. 建立一個全新的、超級寬闊的白底畫布 (放大2倍 + 周圍加上 80px 的留白)
-            const targetW = cropW * 2 + 160; 
-            const targetH = cropH * 2 + 160;
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = targetW;
-            tempCanvas.height = targetH;
-            const ctx = tempCanvas.getContext('2d');
-
-            // 填滿純白背景
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, targetW, targetH);
-
-            // 4. 將像素畫到正中間，並強制加粗變黑
-            ctx.fillStyle = '#000000';
-            const startX = 80; // 留白起點
-            const startY = 80;
-
-            for (let y = minY; y < maxY; y++) {
-                for (let x = minX; x < maxX; x++) {
-                    const alpha = data[(y * width + x) * 4 + 3];
-                    if (alpha > 10) {
-                        // 每個像素畫成 3x3 的黑塊，讓手寫字看起來更濃密連貫
-                        ctx.fillRect(startX + (x - minX) * 2, startY + (y - minY) * 2, 3, 3);
-                    }
-                }
-            }
-            
-            return tempCanvas;
-        }
-
-        document.getElementById('btnGrade').addEventListener('click', async function() {
-            const loading = document.getElementById('loading');
-            loading.style.display = 'block';
-            document.getElementById('feedback-section').style.display = 'none';
-            
-            document.querySelectorAll('.correct-ans-col').forEach(col => {
-                col.style.display = 'table-cell';
-            });
-
-            let score = 0;
-            const worker = await Tesseract.createWorker('eng');
-            
-            // 🔥 將辨識模式改為 7 (Treat the image as a single text line)
-            // 這樣對於字母寫得比較開的單字辨識率會好很多
-            await worker.setParameters({
-                tessedit_char_whitelist: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
-                tessedit_pageseg_mode: '7', 
-            });
-            
-            const originalOrderData = [
-                verbsData[0], verbsData[1], 
-                verbsData[2], verbsData[3], 
-                verbsData[4], verbsData[5], 
-                verbsData[6], verbsData[7], 
-                verbsData[8], verbsData[9]  
-            ];
-
-            for (let i = 0; i < 10; i++) {
-                const canvas = canvases[i];
-                const expectedAnswer = originalOrderData[i].perfect;
-                
-                const blank = isCanvasBlank(canvas);
-                let recognizedText = "";
-
-                if (!blank) {
-                    const processedCanvas = preprocessForOCR(canvas);
-                    const { data: { text } } = await worker.recognize(processedCanvas);
-                    recognizedText = text.trim().replace(/[^a-zA-Z]/g, ''); 
-                    
-                    // 把 AI 看到的結果印在 console，方便偵錯
-                    console.log(`題號 ${i+1}: 預期答案 [${expectedAnswer}] | AI 辨識出 [${recognizedText}]`);
-                }
-
-                const markIcon = document.getElementById(`mark${i}`);
-                
-                // 嚴格比對：不再使用 toLowerCase()，大小寫必須完全相符
-                if (!blank && recognizedText === expectedAnswer) {
-                    score++;
-                    markIcon.innerHTML = '✔';
-                    markIcon.className = 'mark-icon tick';
-                } else {
-                    markIcon.innerHTML = '✘';
-                    markIcon.className = 'mark-icon cross';
-                }
-            }
-            
-            await worker.terminate();
-            loading.style.display = 'none';
-
-            const feedback = document.getElementById('feedback-section');
-            const scoreText = document.getElementById('score-text');
-            const commentText = document.getElementById('comment-text');
-            feedback.style.display = 'block';
-            
-            let comment = "";
-            if (score === 10) {
-                comment = "🏆 太棒了！完美滿分，大小寫也全對，繼續保持！";
-                scoreText.style.color = "#155724";
-            } else if (score >= 7) {
-                comment = "🌟 表現得很好！看看錯在哪裡（留意有沒有不小心寫了大楷喔），下次一定能拿滿分！";
-                scoreText.style.color = "#004085";
-            } else if (score >= 4) {
-                comment = "👍 繼續努力！請特別留意動詞表裡的大小寫，以及不規則動詞的拼法。";
-                scoreText.style.color = "#856404";
-            } else {
-                comment = "💪 不要灰心，讓我們一起複習底下的動詞變化規律，你可以的！";
-                scoreText.style.color = "#721c24";
-            }
-
-            scoreText.innerHTML = `本次得分：${score} / 10 分`;
-            commentText.innerHTML = comment;
-        });
-
-        function isCanvasBlank(canvas) {
-            const blank = document.createElement('canvas');
-            blank.width = canvas.width;
-            blank.height = canvas.height;
-            return canvas.toDataURL() === blank.toDataURL();
-        }
-
-        window.onload = buildTable;
-
     </script>
 </body>
 </html>
