@@ -122,11 +122,11 @@
             border-radius: 10px;
         }
         #textCanvas {
-            z-index: 1; /* 底層：放題目和藍線 */
+            z-index: 1; 
             background-image: repeating-linear-gradient(white, white 39px, #81ecec 40px);
         }
         #dictationCanvas {
-            z-index: 2; /* 頂層：透明背景，供學生畫畫與擦拭 */
+            z-index: 2; 
             background-color: transparent;
             cursor: crosshair;
             touch-action: none; 
@@ -202,7 +202,7 @@
                 </tr>
             </thead>
             <tbody id="tableBody">
-                </tbody>
+            </tbody>
         </table>
         <div style="text-align: center;">
             <button class="btn-check" onclick="checkTable()">✔️ 自動批改</button>
@@ -267,11 +267,10 @@
             { present: 'sit', perfect: 'sat' }
         ];
 
-        // 為了讓照片上傳批改更準確，建立「要忽略的題目單字庫」
+        // 題目單字過濾庫
         const ignoreWordsList = ['part', 'verb', 'table', 'regular', 'irregular', 'verbs', 'present', 'tense', 'perfect', 'has', 'have'];
         wordList.forEach(w => ignoreWordsList.push(w.present.toLowerCase()));
 
-        // 發音功能
         function speakWord(text) {
             if ('speechSynthesis' in window) {
                 const utterance = new SpeechSynthesisUtterance(text);
@@ -341,7 +340,7 @@
         const canvas = document.getElementById('dictationCanvas');
         const ctx = canvas.getContext('2d');
         let isDrawing = false;
-        let currentTool = 'blue'; // 預設改為藍筆
+        let currentTool = 'blue'; 
 
         function setTool(tool) {
             currentTool = tool;
@@ -423,24 +422,67 @@
             initCanvasText(false); 
         }
 
-        // --- AI 圈出錯處 (優化版) ---
+        // 獨立出的成績計算器（精準區分「正確」、「大小寫錯誤」、「完全寫錯/漏寫」）
+        function analyzeOCRText(recognizedWords, container) {
+            let score = 0;
+            let feedbackHTML = '<h3>📝 AI 批改結果：</h3>';
+            let foundWords = [];
+            let caseErrors = [];
+            let missedWords = [];
+            
+            // 將 AI 辨識到的字統一清除標點，方便比對，但「保留原始大小寫」
+            const cleanWordsList = recognizedWords.map(w => w.text.replace(/[^a-zA-Z]/g, ''));
+
+            wordList.forEach(word => {
+                const target = word.perfect; // e.g., 'asked'
+                
+                // 1. 嚴格比對：連大小寫都一模一樣才算對
+                if (cleanWordsList.includes(target)) {
+                    score++;
+                    foundWords.push(target);
+                } else {
+                    // 2. 找找看有沒有人拼對字母，但是大小寫寫錯的 (例如 Asked, ASKED)
+                    const wrongCaseWord = cleanWordsList.find(w => w.toLowerCase() === target.toLowerCase());
+                    
+                    if (wrongCaseWord) {
+                        caseErrors.push(`<b>${wrongCaseWord}</b> (大小寫錯誤，應為 <b>${target}</b>)`);
+                    } else {
+                        // 3. 真的沒寫，或是拼錯了
+                        missedWords.push(target);
+                    }
+                }
+            });
+
+            feedbackHTML += `<p style="font-size: 1.2em;"><strong>🌟 得分： ${score} / 10</strong></p>`;
+            
+            if (foundWords.length > 0) {
+                feedbackHTML += `<p style="color: #27ae60;">✅ <b>完全正確：</b><br>${foundWords.join(', ')}</p>`;
+            }
+            if (caseErrors.length > 0) {
+                feedbackHTML += `<p style="color: #d35400;">⚠️ <b>大小寫錯誤 (不給分)：</b><br>${caseErrors.join('<br>')}</p>`;
+            }
+            if (missedWords.length > 0) {
+                feedbackHTML += `<p style="color: #c0392b;">❌ <b>未作答或拼錯的字：</b><br>${missedWords.join(', ')}</p>`;
+            }
+
+            container.innerHTML = feedbackHTML;
+        }
+
         function highlightMistakes(targetCtx, recognizedWords) {
-            const perfectWords = wordList.map(w => w.perfect);
+            const perfectWords = wordList.map(w => w.perfect); // 這裡面全是小寫
 
             recognizedWords.forEach(w => {
                 const text = w.text.trim();
-                const cleanText = text.toLowerCase().replace(/[^a-z]/g, '');
+                const exactText = text.replace(/[^a-zA-Z]/g, '');
+                const lowerText = exactText.toLowerCase();
 
-                // 1. 過濾掉太短的雜訊 (長度 < 2 的字母通常是雜訊或標點)
-                if (!cleanText || cleanText.length < 2) return; 
+                if (!exactText || exactText.length < 2) return; 
+                if (ignoreWordsList.includes(lowerText)) return; 
                 
-                // 2. 過濾掉題目本身的單字 (避免把題目當錯字圈起來)
-                if (ignoreWordsList.includes(cleanText)) return; 
-                
-                // 3. 過濾掉完全寫對的答案
-                if (perfectWords.includes(cleanText)) return; 
+                // 只要不是「完全一模一樣的小寫單字」，就會被畫上紅框
+                // 也就是說 Asked 會因為不等於 asked，被順利畫上紅框！
+                if (perfectWords.includes(exactText)) return; 
 
-                // 剩下的就是錯字，畫上紅框
                 targetCtx.save();
                 targetCtx.strokeStyle = '#e74c3c'; 
                 targetCtx.lineWidth = 3;
@@ -461,25 +503,19 @@
             btn.disabled = true;
 
             try {
-                // 【核心優化】：只抽取「學生手寫層 (dictationCanvas)」給 AI 看
-                // 這樣 AI 就不會看到印製的題目，準確率大幅提升
                 const tempCanvas = document.createElement('canvas');
                 tempCanvas.width = canvas.width;
                 tempCanvas.height = canvas.height;
                 const tempCtx = tempCanvas.getContext('2d');
                 
-                // 先鋪上一層白底，因為 Tesseract 對透明背景辨識較差
                 tempCtx.fillStyle = '#ffffff';
                 tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-                
-                // 「不」畫入 textCanvas (題目層)，只畫入學生的藍筆手寫層
                 tempCtx.drawImage(canvas, 0, 0);
 
                 const dataUrl = tempCanvas.toDataURL("image/png");
-                const { data: { text, words } } = await Tesseract.recognize(dataUrl, 'eng');
+                const { data: { words } } = await Tesseract.recognize(dataUrl, 'eng');
                 
-                analyzeOCRText(text, resultBox);
-                // 把紅框畫在原本的畫布上
+                analyzeOCRText(words, resultBox); // 傳入 words 陣列做精準分析
                 highlightMistakes(ctx, words);
 
                 initCanvasText(true);
@@ -502,15 +538,27 @@
                     const uCanvas = document.getElementById('uploadCanvas');
                     const uCtx = uCanvas.getContext('2d');
                     
-                    uCanvas.width = img.width;
-                    uCanvas.height = img.height;
-                    uCtx.clearRect(0, 0, uCanvas.width, uCanvas.height);
-                    uCtx.drawImage(img, 0, 0);
+                    // 為了提升 Tesseract 對實體照片的判讀率，限制最大寬度並進行縮放
+                    const MAX_WIDTH = 1200;
+                    let scale = 1;
+                    if (img.width > MAX_WIDTH) {
+                        scale = MAX_WIDTH / img.width;
+                    }
+                    uCanvas.width = img.width * scale;
+                    uCanvas.height = img.height * scale;
+                    
+                    // 【重點優化】：加入灰階與對比度濾鏡，讓照片上的字跡變得黑白分明，減少陰影雜訊
+                    uCtx.filter = 'grayscale(100%) contrast(150%) brightness(110%)';
+                    uCtx.drawImage(img, 0, 0, uCanvas.width, uCanvas.height);
+                    
+                    // 畫完之後重置濾鏡，以免等一下畫的紅框變成黑白的
+                    uCtx.filter = 'none';
+                    
                     uCanvas.style.display = 'inline-block';
                     
                     const resultBox = document.getElementById('uploadResult');
                     resultBox.style.display = 'block';
-                    resultBox.innerHTML = '<p class="loading">⏳ 收到圖片！AI 正在自動過濾題目並分析筆跡，請稍候...</p>';
+                    resultBox.innerHTML = '<p class="loading">⏳ 照片已進行「黑白對比增強」處理！AI 正在分析筆跡中...</p>';
                     document.getElementById('btnScreenshot').style.display = 'none';
                     
                     checkUploadOCR();
@@ -529,46 +577,15 @@
 
             try {
                 const uCtx = uCanvas.getContext('2d');
-                const { data: { text, words } } = await Tesseract.recognize(uCanvas.toDataURL(), 'eng');
+                const { data: { words } } = await Tesseract.recognize(uCanvas.toDataURL(), 'eng');
                 
-                analyzeOCRText(text, resultBox);
+                analyzeOCRText(words, resultBox); // 傳入 words 陣列做精準分析
                 highlightMistakes(uCtx, words);
                 
                 screenshotBtn.style.display = 'inline-block';
             } catch (error) {
                 resultBox.innerHTML = `<p style="color:red;">❌ 辨識發生錯誤：${error.message}</p>`;
             }
-        }
-
-        function analyzeOCRText(recognizedText, container) {
-            let score = 0;
-            let feedbackHTML = '<h3>📝 AI 批改結果：</h3>';
-            let foundWords = [];
-            let missedWords = [];
-            
-            // 將所有辨識到的文字轉小寫，提升比對成功率
-            const lowerRecognizedText = recognizedText.toLowerCase();
-
-            wordList.forEach(word => {
-                const regex = new RegExp(`\\b${word.perfect}\\b`);
-                if (regex.test(lowerRecognizedText)) {
-                    score++;
-                    foundWords.push(word.perfect);
-                } else {
-                    missedWords.push(word.perfect);
-                }
-            });
-
-            feedbackHTML += `<p style="font-size: 1.2em;"><strong>🌟 得分： ${score} / 10</strong></p>`;
-            
-            if (foundWords.length > 0) {
-                feedbackHTML += `<p style="color: #27ae60;">✅ <b>完全正確的字：</b><br>${foundWords.join(', ')}</p>`;
-            }
-            if (missedWords.length > 0) {
-                feedbackHTML += `<p style="color: #c0392b;">❌ <b>需要改正的字 (已在圖上用紅框標示)：</b><br>${missedWords.join(', ')}</p>`;
-            }
-
-            container.innerHTML = feedbackHTML;
         }
 
         function takeScreenshot() {
