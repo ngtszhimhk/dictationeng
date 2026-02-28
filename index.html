@@ -61,18 +61,18 @@
         .mini-btn:hover { background-color: #e0e0e0; }
         .mini-btn.active-tool { background-color: #cce5ff; border-color: #007bff; }
         
-        /* 四線譜背景設計 - 闊度加至 240px */
+        /* 四線譜背景設計 - 闊度 240px，高度增至 80px，行高加寬 */
         .canvas-wrapper {
             position: relative;
             width: 240px; 
-            height: 50px;
+            height: 80px; /* 高度已增加 */
             background-color: #fff;
             background-image: linear-gradient(
                 to bottom,
-                transparent 13px, #ff9999 14px, /* 第一線 紅色 */
-                transparent 15px, transparent 24px, #99ccff 25px, /* 第二線 藍色 */
-                transparent 26px, transparent 35px, #99ccff 36px, /* 第三線 藍色 */
-                transparent 37px, transparent 46px, #ff9999 47px /* 第四線 紅色 */
+                transparent 15px, #ff9999 16px, /* 第一線 紅色 */
+                transparent 17px, transparent 31px, #99ccff 32px, /* 第二線 藍色 */
+                transparent 33px, transparent 47px, #99ccff 48px, /* 第三線 藍色 */
+                transparent 49px, transparent 63px, #ff9999 64px /* 第四線 紅色 */
             );
             border: 1px solid #ccc;
             border-radius: 4px;
@@ -210,7 +210,6 @@
     </div>
 
     <script>
-        // 題庫資料 (包含編號、現在式、完成式、以及變化規則)
         const verbsData = [
             { num: "1.", tense: "ask", perfect: "asked", rule: "直接加 <b>+ ed</b>" },
             { num: "6.", tense: "eat", perfect: "eaten", rule: "不規則變化 (eat ➔ eaten)" },
@@ -226,22 +225,19 @@
 
         let canvases = [];
         let contexts = [];
-        let currentTool = 'pen'; // 全局繪圖工具狀態
+        let currentTool = 'pen'; 
 
-        // 發音功能 (Web Speech API)
         function speakWord(word) {
             const utterance = new SpeechSynthesisUtterance(word);
-            utterance.lang = 'en-GB'; // 採用英式發音，適合香港學生
-            utterance.rate = 0.85;    // 語速稍微調慢一點點，讓學生聽得更清楚
+            utterance.lang = 'en-GB'; 
+            utterance.rate = 0.85;    
             window.speechSynthesis.speak(utterance);
         }
 
-        // 切換工具 (畫筆 / 膠擦)
         function setTool(tool) {
             currentTool = tool;
         }
 
-        // 建立表格
         function buildTable() {
             const tbody = document.querySelector("#verbTable tbody");
             const rulesTbody = document.querySelector("#rulesTable tbody");
@@ -249,13 +245,11 @@
             for (let i = 0; i < 5; i++) {
                 const tr = document.createElement("tr");
                 
-                // 左半部
                 const leftItem = verbsData[i * 2];
                 tr.appendChild(createTenseCell(leftItem.num, leftItem.tense));
                 tr.appendChild(createCanvasCell(i * 2, leftItem.perfect));
                 tr.appendChild(createAnswerCell(leftItem.perfect, i * 2));
 
-                // 右半部
                 const rightItem = verbsData[i * 2 + 1];
                 tr.appendChild(createTenseCell(rightItem.num, rightItem.tense));
                 tr.appendChild(createCanvasCell(i * 2 + 1, rightItem.perfect));
@@ -264,7 +258,6 @@
                 tbody.appendChild(tr);
             }
             
-            // 建立下方回饋區的規則表格
             verbsData.sort((a, b) => parseInt(a.num) - parseInt(b.num)).forEach(item => {
                 const tr = document.createElement("tr");
                 tr.innerHTML = `
@@ -279,7 +272,6 @@
             initCanvases();
         }
 
-        // 建立 Present Tense 儲存格 (含發音按鈕)
         function createTenseCell(num, word) {
             const td = document.createElement("td");
             td.innerHTML = `
@@ -289,7 +281,6 @@
             return td;
         }
 
-        // 建立畫布儲存格 (含迷你工具列)
         function createCanvasCell(index, answerWord) {
             const td = document.createElement("td");
             td.innerHTML = `
@@ -300,7 +291,7 @@
                         <button class="mini-btn" onclick="speakWord('${answerWord}')" title="聆聽答案發音">🔊</button>
                     </div>
                     <div class="canvas-wrapper">
-                        <canvas id="canvas${index}" width="240" height="50"></canvas>
+                        <canvas id="canvas${index}" width="240" height="80"></canvas>
                     </div>
                     <span class="mark-icon" id="mark${index}"></span>
                 </div>
@@ -316,10 +307,7 @@
             return td;
         }
 
-        // 初始化畫布與繪圖事件
         function initCanvases() {
-            // 根據排好序的 verbsData 重建對應關係
-            // 注意：因為上面 buildTable 已經按原本順序建立了 canvas IDs
             for (let i = 0; i < 10; i++) {
                 const canvas = document.getElementById(`canvas${i}`);
                 const ctx = canvas.getContext("2d", { willReadFrequently: true });
@@ -385,11 +373,10 @@
             }
         }
 
-        // 清屏按鈕
         document.getElementById('btnClear').addEventListener('click', function() {
             if(confirm("確定要清除所有內容重新默寫嗎？")) {
                 contexts.forEach(ctx => {
-                    ctx.clearRect(0, 0, 240, 50); // 清除闊度改為 240
+                    ctx.clearRect(0, 0, 240, 80); // 清除高度更新為 80
                 });
                 document.querySelectorAll('.correct-ans-col').forEach(col => col.style.display = 'none');
                 for(let i=0; i<10; i++) {
@@ -399,7 +386,6 @@
             }
         });
 
-        // AI 自動批改
         document.getElementById('btnGrade').addEventListener('click', async function() {
             const loading = document.getElementById('loading');
             loading.style.display = 'block';
@@ -412,13 +398,12 @@
             let score = 0;
             const worker = await Tesseract.createWorker('eng');
             
-            // 注意對應的答案陣列，這裡要依照原先建立表格的順序
             const originalOrderData = [
-                verbsData[0], verbsData[1], // ask, eat
-                verbsData[2], verbsData[3], // look, ride
-                verbsData[4], verbsData[5], // shout, take
-                verbsData[6], verbsData[7], // tidy, get
-                verbsData[8], verbsData[9]  // study, sit
+                verbsData[0], verbsData[1], 
+                verbsData[2], verbsData[3], 
+                verbsData[4], verbsData[5], 
+                verbsData[6], verbsData[7], 
+                verbsData[8], verbsData[9]  
             ];
 
             for (let i = 0; i < 10; i++) {
@@ -448,7 +433,6 @@
             await worker.terminate();
             loading.style.display = 'none';
 
-            // 顯示分數與評語
             const feedback = document.getElementById('feedback-section');
             const scoreText = document.getElementById('score-text');
             const commentText = document.getElementById('comment-text');
