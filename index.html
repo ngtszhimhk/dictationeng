@@ -213,7 +213,7 @@
 
     <div class="container" id="part2">
         <h2>Part A: Apple Pencil 單行簿畫布版</h2>
-        <p>在下方選擇文具，並在畫布的空白處寫上你的答案吧！</p>
+        <p>在下方選擇文具，並在底線上寫出對應的字母吧！</p>
         
         <div style="text-align: center;">
             <div class="toolbar">
@@ -228,7 +228,7 @@
             <canvas id="dictationCanvas" class="canvas-layer" width="700" height="440"></canvas>
         </div>
         <div style="text-align: center;">
-            <button class="btn-reset" onclick="clearDrawCanvas()">🧹 清除畫筆 (保留題目)</button>
+            <button class="btn-reset" onclick="clearDrawCanvas()">🔄 重默</button>
             <button class="btn-check" id="btnCanvasOCR" onclick="checkCanvasOCR()">🤖 畫布真實AI批改</button>
         </div>
         <div class="mock-result" id="canvasResult"></div>
@@ -239,7 +239,6 @@
         <p>完成紙本默書後，請選擇拍照或上傳相片交功課（上傳後會自動為你批改）：</p>
         <div style="text-align: center;">
             <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="previewUpload(event)">
-            
             <button class="btn-upload" onclick="document.getElementById('fileInput').click()">📸 拍照 / 相片上傳默書紙</button>
         </div>
         
@@ -349,15 +348,35 @@
             document.getElementById(`tool-${tool}`).classList.add('active');
         }
 
-        function initCanvasText() {
+        // 修改：加入輔助線 (_ _ _) 且控制是否顯示括號答案 (showAnswers)
+        function initCanvasText(showAnswers = false) {
             textCtx.clearRect(0, 0, textCanvas.width, textCanvas.height);
-            textCtx.font = '20px Comic Sans MS';
+            textCtx.font = '18px Comic Sans MS'; // 稍微縮小字體以容納輔助線
             textCtx.fillStyle = '#333';
-            let leftColX = 30, rightColX = 380;
+            let leftColX = 20, rightColX = 360; // 調整左右欄距
+
             for (let i = 0; i < 5; i++) {
                 let y = 65 + (i * 80); 
-                textCtx.fillText(`${i+1}. ${wordList[i].present} ➔ `, leftColX, y);
-                textCtx.fillText(`${i+6}. ${wordList[i+5].present} ➔ `, rightColX, y);
+                
+                // 處理左邊欄位
+                let wLeft = wordList[i];
+                // 根據字母長度產生對應數量的底線 (例如 asked 產生 _ _ _ _ _ )
+                let blankLeft = wLeft.perfect.replace(/./g, '_ '); 
+                let textLeft = `${i+1}. ${wLeft.present} ➔ ${blankLeft}`;
+                if (showAnswers) {
+                    textLeft += ` ( ${wLeft.perfect} )`; // 批改後附加答案
+                }
+                
+                // 處理右邊欄位
+                let wRight = wordList[i+5];
+                let blankRight = wRight.perfect.replace(/./g, '_ ');
+                let textRight = `${i+6}. ${wRight.present} ➔ ${blankRight}`;
+                if (showAnswers) {
+                    textRight += ` ( ${wRight.perfect} )`;
+                }
+
+                textCtx.fillText(textLeft, leftColX, y);
+                textCtx.fillText(textRight, rightColX, y);
             }
         }
 
@@ -397,17 +416,13 @@
             ctx.moveTo(x, y);
         }
 
-        canvas.addEventListener('mousedown', startPosition);
-        canvas.addEventListener('mouseup', endPosition);
-        canvas.addEventListener('mousemove', draw);
-        canvas.addEventListener('touchstart', startPosition, {passive: false});
-        canvas.addEventListener('touchend', endPosition);
-        canvas.addEventListener('touchmove', draw, {passive: false});
-
         function clearDrawCanvas() {
+            // 清除學生筆跡
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             document.getElementById('canvasResult').style.display = 'none';
             setTool('black');
+            // 將底層畫布重置為「不顯示答案」的狀態
+            initCanvasText(false); 
         }
 
         // --- AI 圈出錯處 ---
@@ -446,6 +461,7 @@
             btn.disabled = true;
 
             try {
+                // 注意：必須在顯示答案「之前」擷取畫布，以免 AI 辨識到正確答案
                 const tempCanvas = document.createElement('canvas');
                 tempCanvas.width = canvas.width;
                 tempCanvas.height = canvas.height;
@@ -460,6 +476,10 @@
                 
                 analyzeOCRText(text, resultBox);
                 highlightMistakes(ctx, words);
+
+                // AI 辨識完成後，在底層畫布上印出括號內的正確答案
+                initCanvasText(true);
+
             } catch (error) {
                 resultBox.innerHTML = `<p style="color:red;">❌ 辨識發生錯誤：${error.message}</p>`;
             } finally {
@@ -467,7 +487,7 @@
             }
         }
 
-        // --- 第三部分：上傳與截圖邏輯 (已更新為自動批改) ---
+        // --- 第三部分：上傳與截圖邏輯 (自動批改) ---
         function previewUpload(event) {
             if(!event.target.files[0]) return;
             const reader = new FileReader();
@@ -478,27 +498,23 @@
                     const uCanvas = document.getElementById('uploadCanvas');
                     const uCtx = uCanvas.getContext('2d');
                     
-                    // 重置畫布大小並清除舊圖片
                     uCanvas.width = img.width;
                     uCanvas.height = img.height;
                     uCtx.clearRect(0, 0, uCanvas.width, uCanvas.height);
                     uCtx.drawImage(img, 0, 0);
                     uCanvas.style.display = 'inline-block';
                     
-                    // 重置結果區域，顯示 loading，隱藏舊的截圖按鈕
                     const resultBox = document.getElementById('uploadResult');
                     resultBox.style.display = 'block';
                     resultBox.innerHTML = '<p class="loading">⏳ 收到圖片！AI 正在自動分析並圈出錯處，請稍候...</p>';
                     document.getElementById('btnScreenshot').style.display = 'none';
                     
-                    // 自動觸發批改
                     checkUploadOCR();
                 }
                 img.src = e.target.result;
             }
             reader.readAsDataURL(event.target.files[0]);
             
-            // 清空 input，確保連續上傳同一張照片也能觸發更新
             event.target.value = '';
         }
 
@@ -576,7 +592,7 @@
 
         window.onload = () => {
             initTable();
-            initCanvasText();
+            initCanvasText(false); // 網頁載入時初始化畫布（不顯示答案）
         };
     </script>
 </body>
