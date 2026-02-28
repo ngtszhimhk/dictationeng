@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>小五英文默書助手 - Part A</title>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     
     <style>
         :root {
@@ -83,8 +82,6 @@
         }
         .btn-check { background-color: var(--primary-color); color: white; }
         .btn-reset { background-color: #ff9800; color: white; }
-        .btn-upload { background-color: var(--secondary-color); color: white; }
-        .btn-download { background-color: #8e44ad; color: white; }
         .btn-speak { 
             background: none; 
             border: none; 
@@ -104,6 +101,7 @@
             min-height: 35px;
         }
 
+        /* 雙層畫布系統 Styles */
         .canvas-wrapper {
             position: relative;
             width: 100%;
@@ -131,6 +129,7 @@
             touch-action: none; 
         }
         
+        /* 文具列 Styles */
         .toolbar {
             text-align: center;
             margin-bottom: 10px;
@@ -159,21 +158,6 @@
             padding: 15px;
             margin-top: 15px;
             border-radius: 5px;
-        }
-
-        #screenshotArea {
-            background: white;
-            padding: 10px;
-            border-radius: 10px;
-            margin-top: 15px;
-        }
-
-        #uploadCanvas {
-            max-width: 100%;
-            margin-top: 10px;
-            border-radius: 10px;
-            display: none;
-            border: 2px solid #ccc;
         }
         
         .loading {
@@ -227,26 +211,6 @@
             <button class="btn-check" id="btnCanvasOCR" onclick="checkCanvasOCR()">🤖 畫布真實AI批改</button>
         </div>
         <div class="mock-result" id="canvasResult"></div>
-    </div>
-
-    <div class="container" id="part3">
-        <h2>Part A: 紙本默書拍照 / 相片上傳</h2>
-        <p>完成紙本默書後，請選擇拍照或上傳相片交功課（上傳後會自動為你批改）：</p>
-        <div style="text-align: center;">
-            <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="previewUpload(event)">
-            <button class="btn-upload" onclick="document.getElementById('fileInput').click()">📸 拍照 / 相片上傳默書紙</button>
-        </div>
-        
-        <div id="screenshotArea">
-            <div style="text-align: center;">
-                <canvas id="uploadCanvas"></canvas>
-            </div>
-            <div class="mock-result" id="uploadResult"></div>
-        </div>
-
-        <div style="text-align: center; margin-top: 15px;">
-            <button class="btn-download" id="btnScreenshot" style="display: none;" onclick="takeScreenshot()">💾 儲存成績單截圖</button>
-        </div>
     </div>
 
     <script>
@@ -499,85 +463,6 @@
             } catch (error) {
                 resultBox.innerHTML = `<p style="color:red;">❌ 辨識錯誤：${error.message}</p>`;
             } finally { btn.disabled = false; }
-        }
-
-        // --- 拍照上傳區塊 ---
-        function previewUpload(event) {
-            if(!event.target.files[0]) return;
-            const reader = new FileReader();
-            
-            reader.onload = function(e) {
-                const img = new Image();
-                img.onload = function() {
-                    const uCanvas = document.getElementById('uploadCanvas');
-                    const uCtx = uCanvas.getContext('2d');
-                    
-                    let scale = img.width > 1200 ? 1200 / img.width : 1;
-                    uCanvas.width = img.width * scale;
-                    uCanvas.height = img.height * scale;
-                    uCtx.drawImage(img, 0, 0, uCanvas.width, uCanvas.height);
-                    
-                    // 真・像素級二值化 (徹底消除相片陰影)
-                    const imageData = uCtx.getImageData(0, 0, uCanvas.width, uCanvas.height);
-                    const data = imageData.data;
-                    for (let i = 0; i < data.length; i += 4) {
-                        // 計算亮度，如果像素偏暗(墨水)就變純黑，偏亮(紙張/陰影)就變純白
-                        const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
-                        const threshold = 145; // 亮度閾值
-                        const color = brightness < threshold ? 0 : 255;
-                        data[i] = color; data[i + 1] = color; data[i + 2] = color;
-                    }
-                    uCtx.putImageData(imageData, 0, 0);
-                    
-                    uCanvas.style.display = 'inline-block';
-                    const resultBox = document.getElementById('uploadResult');
-                    resultBox.style.display = 'block';
-                    resultBox.innerHTML = '<p class="loading">⏳ 照片已進行「像素級漂白」！AI 正在分析...</p>';
-                    document.getElementById('btnScreenshot').style.display = 'none';
-                    checkUploadOCR();
-                }
-                img.src = e.target.result;
-            }
-            reader.readAsDataURL(event.target.files[0]);
-            event.target.value = '';
-        }
-
-        async function checkUploadOCR() {
-            const uCanvas = document.getElementById('uploadCanvas');
-            const resultBox = document.getElementById('uploadResult');
-            const screenshotBtn = document.getElementById('btnScreenshot');
-
-            try {
-                const uCtx = uCanvas.getContext('2d');
-                const { data: { words } } = await Tesseract.recognize(uCanvas.toDataURL(), 'eng');
-                
-                processAndScoreOCR(words, resultBox, uCtx);
-                screenshotBtn.style.display = 'inline-block';
-            } catch (error) {
-                resultBox.innerHTML = `<p style="color:red;">❌ 辨識發生錯誤：${error.message}</p>`;
-            }
-        }
-
-        function takeScreenshot() {
-            const btn = document.getElementById('btnScreenshot');
-            const originalText = btn.innerText; btn.innerText = '📸 處理中...'; btn.disabled = true;
-
-            html2canvas(document.getElementById('screenshotArea'), { backgroundColor: '#ffffff', scale: 2 }).then(canvas => {
-                canvas.toBlob(async (blob) => {
-                    const file = new File([blob], '默書成績單.png', { type: 'image/png' });
-                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        try {
-                            await navigator.share({ files: [file], title: '成績單', text: '我的默書成績！' });
-                        } catch (err) { forceDownload(canvas.toDataURL('image/png'), '默書成績單.png'); }
-                    } else { forceDownload(canvas.toDataURL('image/png'), '默書成績單.png'); }
-                    btn.innerText = originalText; btn.disabled = false;
-                }, 'image/png');
-            });
-
-            function forceDownload(dataUrl, filename) {
-                const link = document.createElement('a'); link.download = filename; link.href = dataUrl;
-                link.click(); btn.innerText = originalText; btn.disabled = false;
-            }
         }
 
         canvas.addEventListener('mousedown', startPosition);
