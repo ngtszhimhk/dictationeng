@@ -29,19 +29,43 @@
         th, td {
             border: 1px solid #666;
             padding: 10px;
-            text-align: center;
+            text-align: left;
             vertical-align: middle;
             font-size: 18px;
         }
         th {
             background-color: #e0e0e0;
+            text-align: center;
         }
-        /* 四線譜背景設計 */
+        
+        /* 迷你工具列與畫布排版 */
+        .canvas-cell-container {
+            display: flex;
+            align-items: center;
+        }
+        .mini-tools {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-right: 8px;
+        }
+        .mini-btn {
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 2px 4px;
+            font-size: 14px;
+            transition: 0.2s;
+        }
+        .mini-btn:hover { background-color: #e0e0e0; }
+        .mini-btn.active-tool { background-color: #cce5ff; border-color: #007bff; }
+        
+        /* 四線譜背景設計 - 闊度加至 240px */
         .canvas-wrapper {
             position: relative;
-            width: 160px;
+            width: 240px; 
             height: 50px;
-            margin: 0 auto;
             background-color: #fff;
             background-image: linear-gradient(
                 to bottom,
@@ -52,20 +76,21 @@
             );
             border: 1px solid #ccc;
             border-radius: 4px;
-            display: inline-block;
         }
         canvas {
             position: absolute;
             top: 0;
             left: 0;
             cursor: crosshair;
-            touch-action: none; /* 防止在畫布上滑動時觸發網頁滾動 */
+            touch-action: none;
         }
+        
         .correct-ans-col {
-            display: none; /* 預設隱藏，批改後顯示 */
+            display: none; 
             color: #0056b3;
             font-weight: bold;
             background-color: #f0f8ff;
+            text-align: center;
         }
         .mark-icon {
             font-size: 24px;
@@ -82,7 +107,7 @@
             text-align: center;
             margin: 20px 0;
         }
-        button {
+        .main-btn {
             padding: 10px 20px;
             font-size: 16px;
             margin: 0 5px;
@@ -92,21 +117,40 @@
             color: white;
             transition: 0.3s;
         }
-        #btnBlue { background-color: #007bff; }
-        #btnEraser { background-color: #6c757d; }
         #btnGrade { background-color: #28a745; font-weight: bold; }
         #btnClear { background-color: #dc3545; }
-        button:hover { opacity: 0.8; }
-        button.active { box-shadow: 0 0 0 4px rgba(0,0,0,0.2); transform: scale(1.05); }
+        .main-btn:hover { opacity: 0.8; }
 
         #feedback-section {
-            text-align: center;
-            font-size: 22px;
-            font-weight: bold;
+            font-size: 18px;
             margin-top: 20px;
-            padding: 15px;
+            padding: 20px;
             border-radius: 8px;
             display: none;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+        }
+        .score-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        .rules-table {
+            width: 100%;
+            margin-top: 15px;
+            border-collapse: collapse;
+            font-size: 16px;
+            background-color: white;
+        }
+        .rules-table th, .rules-table td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+        .rules-table th {
+            background-color: #e9ecef;
+            text-align: center;
         }
         #loading {
             display: none;
@@ -140,67 +184,126 @@
     </div>
 
     <div class="controls">
-        <button id="btnBlue" class="active">✏️ 藍筆</button>
-        <button id="btnEraser">🧽 膠擦</button>
-        <button id="btnGrade">🤖 AI 自動批改</button>
-        <button id="btnClear">🗑️ 清屏重默</button>
+        <button id="btnGrade" class="main-btn">🤖 AI 自動批改</button>
+        <button id="btnClear" class="main-btn">🗑️ 清屏重默</button>
     </div>
 
     <div id="loading">⏳ AI 正在努力辨識你的手寫字中，請稍候約 10-20 秒...</div>
-    <div id="feedback-section"></div>
+    <div id="feedback-section">
+        <div class="score-title" id="score-text"></div>
+        <div id="comment-text" style="text-align: center; margin-bottom: 20px;"></div>
+        
+        <h3 style="color: #495057; border-bottom: 2px solid #ccc; padding-bottom: 5px;">💡 動詞變化小複習 (Rules Revision)</h3>
+        <p>記住 Present tense（現在式）變成 Present Perfect（現在完成式）的動詞變化規律喔：</p>
+        <table class="rules-table" id="rulesTable">
+            <thead>
+                <tr>
+                    <th>題號</th>
+                    <th>Present tense</th>
+                    <th>Present Perfect</th>
+                    <th>變化規則 (Rule)</th>
+                </tr>
+            </thead>
+            <tbody>
+                </tbody>
+        </table>
+    </div>
 
     <script>
+        // 題庫資料 (包含編號、現在式、完成式、以及變化規則)
         const verbsData = [
-            { tense: "1. ask", perfect: "asked" },
-            { tense: "6. eat", perfect: "eaten" },
-            { tense: "2. look", perfect: "looked" },
-            { tense: "7. ride", perfect: "ridden" },
-            { tense: "3. shout", perfect: "shouted" },
-            { tense: "8. take", perfect: "taken" },
-            { tense: "4. tidy", perfect: "tidied" },
-            { tense: "9. get", perfect: "got" },
-            { tense: "5. study", perfect: "studied" },
-            { tense: "10. sit", perfect: "sat" }
+            { num: "1.", tense: "ask", perfect: "asked", rule: "直接加 <b>+ ed</b>" },
+            { num: "6.", tense: "eat", perfect: "eaten", rule: "不規則變化 (eat ➔ eaten)" },
+            { num: "2.", tense: "look", perfect: "looked", rule: "直接加 <b>+ ed</b>" },
+            { num: "7.", tense: "ride", perfect: "ridden", rule: "不規則變化 (ride ➔ ridden)" },
+            { num: "3.", tense: "shout", perfect: "shouted", rule: "直接加 <b>+ ed</b>" },
+            { num: "8.", tense: "take", perfect: "taken", rule: "不規則變化 (take ➔ taken)" },
+            { num: "4.", tense: "tidy", perfect: "tidied", rule: "以子音+y結尾：<b>去 y 加 ied</b>" },
+            { num: "9.", tense: "get", perfect: "got", rule: "不規則變化 (get ➔ got)" },
+            { num: "5.", tense: "study", perfect: "studied", rule: "以子音+y結尾：<b>去 y 加 ied</b>" },
+            { num: "10.", tense: "sit", perfect: "sat", rule: "不規則變化 (sit ➔ sat)" }
         ];
 
         let canvases = [];
         let contexts = [];
-        let currentTool = 'pen'; 
+        let currentTool = 'pen'; // 全局繪圖工具狀態
+
+        // 發音功能 (Web Speech API)
+        function speakWord(word) {
+            const utterance = new SpeechSynthesisUtterance(word);
+            utterance.lang = 'en-GB'; // 採用英式發音，適合香港學生
+            utterance.rate = 0.85;    // 語速稍微調慢一點點，讓學生聽得更清楚
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // 切換工具 (畫筆 / 膠擦)
+        function setTool(tool) {
+            currentTool = tool;
+        }
 
         // 建立表格
         function buildTable() {
             const tbody = document.querySelector("#verbTable tbody");
+            const rulesTbody = document.querySelector("#rulesTable tbody");
+
             for (let i = 0; i < 5; i++) {
                 const tr = document.createElement("tr");
                 
+                // 左半部
                 const leftItem = verbsData[i * 2];
-                tr.appendChild(createCell(leftItem.tense));
-                tr.appendChild(createCanvasCell(i * 2));
+                tr.appendChild(createTenseCell(leftItem.num, leftItem.tense));
+                tr.appendChild(createCanvasCell(i * 2, leftItem.perfect));
                 tr.appendChild(createAnswerCell(leftItem.perfect, i * 2));
 
+                // 右半部
                 const rightItem = verbsData[i * 2 + 1];
-                tr.appendChild(createCell(rightItem.tense));
-                tr.appendChild(createCanvasCell(i * 2 + 1));
+                tr.appendChild(createTenseCell(rightItem.num, rightItem.tense));
+                tr.appendChild(createCanvasCell(i * 2 + 1, rightItem.perfect));
                 tr.appendChild(createAnswerCell(rightItem.perfect, i * 2 + 1));
 
                 tbody.appendChild(tr);
             }
+            
+            // 建立下方回饋區的規則表格
+            verbsData.sort((a, b) => parseInt(a.num) - parseInt(b.num)).forEach(item => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td style="text-align:center;">${item.num}</td>
+                    <td>${item.tense}</td>
+                    <td><b>${item.perfect}</b></td>
+                    <td>${item.rule}</td>
+                `;
+                rulesTbody.appendChild(tr);
+            });
+
             initCanvases();
         }
 
-        function createCell(text) {
+        // 建立 Present Tense 儲存格 (含發音按鈕)
+        function createTenseCell(num, word) {
             const td = document.createElement("td");
-            td.innerText = text;
+            td.innerHTML = `
+                ${num} ${word} 
+                <button class="mini-btn" onclick="speakWord('${word}')" title="聆聽發音">🔊</button>
+            `;
             return td;
         }
 
-        function createCanvasCell(index) {
+        // 建立畫布儲存格 (含迷你工具列)
+        function createCanvasCell(index, answerWord) {
             const td = document.createElement("td");
             td.innerHTML = `
-                <div class="canvas-wrapper">
-                    <canvas id="canvas${index}" width="160" height="50"></canvas>
+                <div class="canvas-cell-container">
+                    <div class="mini-tools">
+                        <button class="mini-btn pen-btn" onclick="setTool('pen')" title="藍筆">✏️</button>
+                        <button class="mini-btn eraser-btn" onclick="setTool('eraser')" title="膠擦">🧽</button>
+                        <button class="mini-btn" onclick="speakWord('${answerWord}')" title="聆聽答案發音">🔊</button>
+                    </div>
+                    <div class="canvas-wrapper">
+                        <canvas id="canvas${index}" width="240" height="50"></canvas>
+                    </div>
+                    <span class="mark-icon" id="mark${index}"></span>
                 </div>
-                <span class="mark-icon" id="mark${index}"></span>
             `;
             return td;
         }
@@ -215,18 +318,19 @@
 
         // 初始化畫布與繪圖事件
         function initCanvases() {
+            // 根據排好序的 verbsData 重建對應關係
+            // 注意：因為上面 buildTable 已經按原本順序建立了 canvas IDs
             for (let i = 0; i < 10; i++) {
                 const canvas = document.getElementById(`canvas${i}`);
                 const ctx = canvas.getContext("2d", { willReadFrequently: true });
                 
-                // --- 已在此處將筆劃改幼為 1.0 ---
                 ctx.lineWidth = 1.0; 
                 ctx.lineCap = "round";
                 ctx.lineJoin = "round";
                 ctx.strokeStyle = "#0000ff";
                 
-                canvases.push(canvas);
-                contexts.push(ctx);
+                canvases[i] = canvas;
+                contexts[i] = ctx;
 
                 let isDrawing = false;
                 let lastX = 0;
@@ -254,11 +358,10 @@
                     
                     if (currentTool === 'eraser') {
                         ctx.globalCompositeOperation = "destination-out";
-                        ctx.lineWidth = 15; // 膠擦維持較大，方便擦拭
+                        ctx.lineWidth = 15; 
                     } else {
                         ctx.globalCompositeOperation = "source-over";
                         ctx.strokeStyle = "#0000ff";
-                        // --- 已在此處將畫筆筆劃改幼為 1.0 ---
                         ctx.lineWidth = 1.0; 
                     }
 
@@ -282,23 +385,11 @@
             }
         }
 
-        // 按鈕功能綁定
-        document.getElementById('btnBlue').addEventListener('click', function() {
-            currentTool = 'pen';
-            this.classList.add('active');
-            document.getElementById('btnEraser').classList.remove('active');
-        });
-
-        document.getElementById('btnEraser').addEventListener('click', function() {
-            currentTool = 'eraser';
-            this.classList.add('active');
-            document.getElementById('btnBlue').classList.remove('active');
-        });
-
+        // 清屏按鈕
         document.getElementById('btnClear').addEventListener('click', function() {
             if(confirm("確定要清除所有內容重新默寫嗎？")) {
                 contexts.forEach(ctx => {
-                    ctx.clearRect(0, 0, 160, 50);
+                    ctx.clearRect(0, 0, 240, 50); // 清除闊度改為 240
                 });
                 document.querySelectorAll('.correct-ans-col').forEach(col => col.style.display = 'none');
                 for(let i=0; i<10; i++) {
@@ -308,7 +399,7 @@
             }
         });
 
-        // AI 自動批改邏輯
+        // AI 自動批改
         document.getElementById('btnGrade').addEventListener('click', async function() {
             const loading = document.getElementById('loading');
             loading.style.display = 'block';
@@ -321,9 +412,18 @@
             let score = 0;
             const worker = await Tesseract.createWorker('eng');
             
+            // 注意對應的答案陣列，這裡要依照原先建立表格的順序
+            const originalOrderData = [
+                verbsData[0], verbsData[1], // ask, eat
+                verbsData[2], verbsData[3], // look, ride
+                verbsData[4], verbsData[5], // shout, take
+                verbsData[6], verbsData[7], // tidy, get
+                verbsData[8], verbsData[9]  // study, sit
+            ];
+
             for (let i = 0; i < 10; i++) {
                 const canvas = canvases[i];
-                const expectedAnswer = verbsData[i].perfect;
+                const expectedAnswer = originalOrderData[i].perfect;
                 
                 const blank = isCanvasBlank(canvas);
                 let recognizedText = "";
@@ -342,36 +442,35 @@
                 } else {
                     markIcon.innerHTML = '✘';
                     markIcon.className = 'mark-icon cross';
-                    console.log(`題號 ${verbsData[i].tense}: 預期[${expectedAnswer}], AI辨識為[${recognizedText}]`);
                 }
             }
             
             await worker.terminate();
             loading.style.display = 'none';
 
+            // 顯示分數與評語
             const feedback = document.getElementById('feedback-section');
+            const scoreText = document.getElementById('score-text');
+            const commentText = document.getElementById('comment-text');
             feedback.style.display = 'block';
             
             let comment = "";
             if (score === 10) {
                 comment = "🏆 太棒了！完美滿分，繼續保持！";
-                feedback.style.backgroundColor = "#d4edda";
-                feedback.style.color = "#155724";
+                scoreText.style.color = "#155724";
             } else if (score >= 7) {
                 comment = "🌟 表現得很好！看看錯在哪裡，下次一定能拿滿分！";
-                feedback.style.backgroundColor = "#cce5ff";
-                feedback.style.color = "#004085";
+                scoreText.style.color = "#004085";
             } else if (score >= 4) {
-                comment = "👍 繼續努力！留意大小寫和不規則動詞的串法喔。";
-                feedback.style.backgroundColor = "#fff3cd";
-                feedback.style.color = "#856404";
+                comment = "👍 繼續努力！留意底下動詞表裡的大小寫和不規則動詞的拼法喔。";
+                scoreText.style.color = "#856404";
             } else {
-                comment = "💪 不要灰心，多多溫習，你可以的！";
-                feedback.style.backgroundColor = "#f8d7da";
-                feedback.style.color = "#721c24";
+                comment = "💪 不要灰心，讓我們一起複習底下的動詞變化規律，你可以的！";
+                scoreText.style.color = "#721c24";
             }
 
-            feedback.innerHTML = `本次得分：${score} / 10 分<br><br>${comment}`;
+            scoreText.innerHTML = `本次得分：${score} / 10 分`;
+            commentText.innerHTML = comment;
         });
 
         function isCanvasBlank(canvas) {
