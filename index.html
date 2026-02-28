@@ -84,7 +84,6 @@
         .btn-check { background-color: var(--primary-color); color: white; }
         .btn-reset { background-color: #ff9800; color: white; }
         .btn-upload { background-color: var(--secondary-color); color: white; }
-        .btn-gallery { background-color: #00bcd4; color: white; }
         .btn-download { background-color: #8e44ad; color: white; }
         .btn-speak { 
             background: none; 
@@ -237,14 +236,11 @@
 
     <div class="container" id="part3">
         <h2>Part A: 紙本默書拍照 / 相片上傳</h2>
-        <p>完成紙本默書後，請選擇拍照或上傳相片交功課：</p>
+        <p>完成紙本默書後，請選擇拍照或上傳相片交功課（上傳後會自動為你批改）：</p>
         <div style="text-align: center;">
-            <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display: none;" onchange="previewUpload(event)">
-            <input type="file" id="galleryInput" accept="image/*" style="display: none;" onchange="previewUpload(event)">
+            <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="previewUpload(event)">
             
-            <button class="btn-upload" onclick="document.getElementById('cameraInput').click()">📸 拍照上傳默書紙</button>
-            <button class="btn-gallery" onclick="document.getElementById('galleryInput').click()">🖼️ 相片上傳默書紙</button>
-            <button class="btn-check" id="btnUploadOCR" onclick="checkUploadOCR()">🤖 圖片真實AI批改</button>
+            <button class="btn-upload" onclick="document.getElementById('fileInput').click()">📸 拍照 / 相片上傳默書紙</button>
         </div>
         
         <div id="screenshotArea">
@@ -353,7 +349,6 @@
             document.getElementById(`tool-${tool}`).classList.add('active');
         }
 
-        // 將題目畫在底層 (textCanvas) 上，永遠不會被擦掉
         function initCanvasText() {
             textCtx.clearRect(0, 0, textCanvas.width, textCanvas.height);
             textCtx.font = '20px Comic Sans MS';
@@ -376,7 +371,6 @@
             let clientX = e.clientX || (e.touches && e.touches[0].clientX);
             let clientY = e.clientY || (e.touches && e.touches[0].clientY);
             
-            // 加入比例縮放計算，防止手機縮小畫面時筆跡偏移
             const scaleX = canvas.width / rect.width;
             const scaleY = canvas.height / rect.height;
             const x = (clientX - rect.left) * scaleX;
@@ -385,7 +379,6 @@
             ctx.lineCap = 'round';
 
             if (currentTool === 'eraser') {
-                // 因為是雙層架構，destination-out 只會讓頂層變透明，從而露出底層的題目！
                 ctx.globalCompositeOperation = 'destination-out';
                 ctx.lineWidth = 25; 
                 ctx.strokeStyle = 'rgba(0,0,0,1)'; 
@@ -411,14 +404,13 @@
         canvas.addEventListener('touchend', endPosition);
         canvas.addEventListener('touchmove', draw, {passive: false});
 
-        // 現在清除畫布只會清除頂層筆跡
         function clearDrawCanvas() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             document.getElementById('canvasResult').style.display = 'none';
             setTool('black');
         }
 
-        // --- AI 圈出錯處的核心邏輯 ---
+        // --- AI 圈出錯處 ---
         function highlightMistakes(targetCtx, recognizedWords) {
             const perfectWords = wordList.map(w => w.perfect);
             const presentWords = wordList.map(w => w.present.toLowerCase());
@@ -427,21 +419,18 @@
                 const text = w.text.trim();
                 const cleanText = text.toLowerCase().replace(/[^a-z]/g, '');
 
-                if (!cleanText) return; // 忽略純符號或數字
-                if (presentWords.includes(cleanText)) return; // 忽略印好的 Present Tense 題目
+                if (!cleanText) return; 
+                if (presentWords.includes(cleanText)) return; 
                 
-                // 如果字跟答案一模一樣 (含大小寫)，就是對的，不畫框
                 if (perfectWords.includes(text)) {
                     return; 
                 }
 
-                // 其餘的被視為錯字，畫上紅框！
                 targetCtx.save();
-                targetCtx.strokeStyle = '#e74c3c'; // 紅色
+                targetCtx.strokeStyle = '#e74c3c'; 
                 targetCtx.lineWidth = 3;
                 targetCtx.strokeRect(w.bbox.x0 - 2, w.bbox.y0 - 2, (w.bbox.x1 - w.bbox.x0) + 4, (w.bbox.y1 - w.bbox.y0) + 4);
                 
-                // 塗上一層半透明淡紅色
                 targetCtx.fillStyle = 'rgba(231, 76, 60, 0.15)';
                 targetCtx.fillRect(w.bbox.x0 - 2, w.bbox.y0 - 2, (w.bbox.x1 - w.bbox.x0) + 4, (w.bbox.y1 - w.bbox.y0) + 4);
                 targetCtx.restore();
@@ -457,7 +446,6 @@
             btn.disabled = true;
 
             try {
-                // 將底層題目和頂層筆跡合併成一張白底圖給 AI 看
                 const tempCanvas = document.createElement('canvas');
                 tempCanvas.width = canvas.width;
                 tempCanvas.height = canvas.height;
@@ -471,8 +459,6 @@
                 const { data: { text, words } } = await Tesseract.recognize(dataUrl, 'eng');
                 
                 analyzeOCRText(text, resultBox);
-                
-                // 在學生畫布上畫紅框
                 highlightMistakes(ctx, words);
             } catch (error) {
                 resultBox.innerHTML = `<p style="color:red;">❌ 辨識發生錯誤：${error.message}</p>`;
@@ -481,59 +467,56 @@
             }
         }
 
-        // --- 第三部分：上傳與截圖邏輯 ---
+        // --- 第三部分：上傳與截圖邏輯 (已更新為自動批改) ---
         function previewUpload(event) {
             if(!event.target.files[0]) return;
             const reader = new FileReader();
+            
             reader.onload = function(e) {
                 const img = new Image();
                 img.onload = function() {
-                    // 把上傳的圖片畫到 canvas 上，方便等一下畫紅框
                     const uCanvas = document.getElementById('uploadCanvas');
+                    const uCtx = uCanvas.getContext('2d');
+                    
+                    // 重置畫布大小並清除舊圖片
                     uCanvas.width = img.width;
                     uCanvas.height = img.height;
-                    const uCtx = uCanvas.getContext('2d');
+                    uCtx.clearRect(0, 0, uCanvas.width, uCanvas.height);
                     uCtx.drawImage(img, 0, 0);
                     uCanvas.style.display = 'inline-block';
                     
-                    document.getElementById('uploadResult').style.display = 'none';
+                    // 重置結果區域，顯示 loading，隱藏舊的截圖按鈕
+                    const resultBox = document.getElementById('uploadResult');
+                    resultBox.style.display = 'block';
+                    resultBox.innerHTML = '<p class="loading">⏳ 收到圖片！AI 正在自動分析並圈出錯處，請稍候...</p>';
                     document.getElementById('btnScreenshot').style.display = 'none';
+                    
+                    // 自動觸發批改
+                    checkUploadOCR();
                 }
                 img.src = e.target.result;
             }
             reader.readAsDataURL(event.target.files[0]);
+            
+            // 清空 input，確保連續上傳同一張照片也能觸發更新
+            event.target.value = '';
         }
 
         async function checkUploadOCR() {
             const uCanvas = document.getElementById('uploadCanvas');
             const resultBox = document.getElementById('uploadResult');
-            const btn = document.getElementById('btnUploadOCR');
             const screenshotBtn = document.getElementById('btnScreenshot');
-
-            if(uCanvas.style.display === 'none') {
-                alert("請先拍照或上傳默書紙相片喔！");
-                return;
-            }
-
-            resultBox.style.display = 'block';
-            resultBox.innerHTML = '<p class="loading">⏳ AI 正在分析你的默書紙並圈出錯處...</p>';
-            btn.disabled = true;
-            screenshotBtn.style.display = 'none';
 
             try {
                 const uCtx = uCanvas.getContext('2d');
                 const { data: { text, words } } = await Tesseract.recognize(uCanvas.toDataURL(), 'eng');
                 
                 analyzeOCRText(text, resultBox);
-                
-                // 在上傳的圖片上畫出錯字的紅框！
                 highlightMistakes(uCtx, words);
                 
                 screenshotBtn.style.display = 'inline-block';
             } catch (error) {
                 resultBox.innerHTML = `<p style="color:red;">❌ 辨識發生錯誤：${error.message}</p>`;
-            } finally {
-                btn.disabled = false;
             }
         }
 
@@ -563,7 +546,6 @@
             });
         }
 
-        // 分析文字給分數
         function analyzeOCRText(recognizedText, container) {
             let score = 0;
             let feedbackHTML = '<h3>📝 AI 批改結果：</h3>';
