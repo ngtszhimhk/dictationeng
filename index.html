@@ -303,22 +303,45 @@
         function initCanvasText(showAnswers = false) {
             textCtx.clearRect(0, 0, textCanvas.width, textCanvas.height);
             textCtx.font = '18px Comic Sans MS';
+            
+            // 定義座標與靠右對齊的邊界
             let leftColX = 20, rightColX = 360; 
+            let leftColAlignRight = 330;  // 左欄答案靠右對齊的 X 座標
+            let rightColAlignRight = 680; // 右欄答案靠右對齊的 X 座標
 
             for (let i = 0; i < 5; i++) {
                 let y = 65 + (i * 80); 
                 let wLeft = wordList[i], wRight = wordList[i+5];
                 
+                // 繪製左欄題目（靠左對齊）
+                textCtx.textAlign = 'left';
                 textCtx.fillStyle = '#333333';
                 let qLeft = `${i+1}. ${wLeft.present} ➔ `;
                 textCtx.fillText(qLeft, leftColX, y);
-                if (showAnswers) { textCtx.fillStyle = '#e74c3c'; textCtx.fillText(` ( ${wLeft.perfect} )`, leftColX + textCtx.measureText(qLeft).width + 100, y); }
                 
+                // 繪製左欄答案（靠右對齊，純黑色）
+                if (showAnswers) { 
+                    textCtx.textAlign = 'right';
+                    textCtx.fillStyle = '#000000';
+                    textCtx.fillText(`( ${wLeft.perfect} )`, leftColAlignRight, y); 
+                }
+                
+                // 繪製右欄題目（靠左對齊）
+                textCtx.textAlign = 'left';
                 textCtx.fillStyle = '#333333';
                 let qRight = `${i+6}. ${wRight.present} ➔ `;
                 textCtx.fillText(qRight, rightColX, y);
-                if (showAnswers) { textCtx.fillStyle = '#e74c3c'; textCtx.fillText(` ( ${wRight.perfect} )`, rightColX + textCtx.measureText(qRight).width + 100, y); }
+                
+                // 繪製右欄答案（靠右對齊，純黑色）
+                if (showAnswers) { 
+                    textCtx.textAlign = 'right';
+                    textCtx.fillStyle = '#000000';
+                    textCtx.fillText(`( ${wRight.perfect} )`, rightColAlignRight, y); 
+                }
             }
+            
+            // 將設定恢復預設，避免影響其他繪圖功能
+            textCtx.textAlign = 'left';
         }
 
         // --- 優化為適合手指觸控的繪圖邏輯 ---
@@ -351,8 +374,8 @@
                 ctx.strokeStyle = 'rgba(0,0,0,1)'; 
             } else {
                 ctx.globalCompositeOperation = 'source-over';
-                // 筆畫變幼，設定為固定粗度 3，不再因為壓力而變粗
-                ctx.lineWidth = 3;
+                // 筆畫再次變幼，設定為固定粗度 1.2，適合手指默寫
+                ctx.lineWidth = 1.2;
                 ctx.strokeStyle = '#2980b9'; 
             }
             ctx.lineTo(x, y); 
