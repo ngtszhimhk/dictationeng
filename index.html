@@ -104,7 +104,6 @@
             min-height: 35px;
         }
 
-        /* 雙層畫布系統 Styles */
         .canvas-wrapper {
             position: relative;
             width: 100%;
@@ -132,7 +131,6 @@
             touch-action: none; 
         }
         
-        /* 文具列 Styles */
         .toolbar {
             text-align: center;
             margin-bottom: 10px;
@@ -163,7 +161,6 @@
             border-radius: 5px;
         }
 
-        /* 截圖與上傳區域 */
         #screenshotArea {
             background: white;
             padding: 10px;
@@ -201,8 +198,7 @@
                     <th>Present Perfect (答案)</th>
                 </tr>
             </thead>
-            <tbody id="tableBody">
-            </tbody>
+            <tbody id="tableBody"></tbody>
         </table>
         <div style="text-align: center;">
             <button class="btn-check" onclick="checkTable()">✔️ 自動批改</button>
@@ -267,7 +263,6 @@
             { present: 'sit', perfect: 'sat' }
         ];
 
-        // 題目單字過濾庫
         const ignoreWordsList = ['part', 'verb', 'table', 'regular', 'irregular', 'verbs', 'present', 'tense', 'perfect', 'has', 'have'];
         wordList.forEach(w => ignoreWordsList.push(w.present.toLowerCase()));
 
@@ -277,32 +272,22 @@
                 utterance.lang = 'en-GB'; 
                 utterance.rate = 0.85;    
                 window.speechSynthesis.speak(utterance);
-            } else {
-                alert("你的瀏覽器不支援發音功能喔！");
             }
         }
 
-        // --- 第一部分：表格 ---
+        // --- 表格區塊 ---
         function initTable() {
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
             for (let i = 0; i < 5; i++) {
-                const wLeft = wordList[i];      
-                const wRight = wordList[i + 5]; 
+                const wLeft = wordList[i], wRight = wordList[i + 5]; 
                 tbody.innerHTML += `
                     <tr>
-                        <td>
-                            ${i + 1}. ${wLeft.present} 
-                            <button class="btn-speak" title="聆聽發音" onclick="speakWord('${wLeft.present}')">🔊</button>
-                        </td>
+                        <td>${i + 1}. ${wLeft.present} <button class="btn-speak" onclick="speakWord('${wLeft.present}')">🔊</button></td>
                         <td style="text-align: center;"><input type="text" id="ans_${i}" autocomplete="off"></td>
-                        <td>
-                            ${i + 6}. ${wRight.present}
-                            <button class="btn-speak" title="聆聽發音" onclick="speakWord('${wRight.present}')">🔊</button>
-                        </td>
+                        <td>${i + 6}. ${wRight.present} <button class="btn-speak" onclick="speakWord('${wRight.present}')">🔊</button></td>
                         <td style="text-align: center;"><input type="text" id="ans_${i + 5}" autocomplete="off"></td>
-                    </tr>
-                `;
+                    </tr>`;
             }
         }
 
@@ -312,11 +297,9 @@
                 const inputElement = document.getElementById(`ans_${i}`);
                 const userAnswer = inputElement.value.trim();
                 const correctAnswer = wordList[i].perfect;
-
                 inputElement.classList.remove('correct', 'incorrect');
                 if (userAnswer === correctAnswer) {
-                    inputElement.classList.add('correct');
-                    score++;
+                    inputElement.classList.add('correct'); score++;
                 } else {
                     inputElement.classList.add('incorrect');
                     inputElement.value = `${userAnswer} (✗ ${correctAnswer})`;
@@ -327,25 +310,22 @@
 
         function resetTable() {
             for (let i = 0; i < wordList.length; i++) {
-                const inputElement = document.getElementById(`ans_${i}`);
-                inputElement.value = '';
-                inputElement.classList.remove('correct', 'incorrect');
+                const el = document.getElementById(`ans_${i}`);
+                el.value = ''; el.classList.remove('correct', 'incorrect');
             }
             document.getElementById('tableScore').innerText = '';
         }
 
-        // --- 第二部分：雙層畫布 ---
+        // --- 畫布區塊 ---
         const textCanvas = document.getElementById('textCanvas');
         const textCtx = textCanvas.getContext('2d');
         const canvas = document.getElementById('dictationCanvas');
         const ctx = canvas.getContext('2d');
-        let isDrawing = false;
-        let currentTool = 'blue'; 
+        let isDrawing = false, currentTool = 'blue'; 
 
         function setTool(tool) {
             currentTool = tool;
-            document.getElementById('tool-blue').classList.remove('active');
-            document.getElementById('tool-eraser').classList.remove('active');
+            document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(`tool-${tool}`).classList.add('active');
         }
 
@@ -356,28 +336,17 @@
 
             for (let i = 0; i < 5; i++) {
                 let y = 65 + (i * 80); 
+                let wLeft = wordList[i], wRight = wordList[i+5];
                 
-                let wLeft = wordList[i];
-                let qTextLeft = `${i+1}. ${wLeft.present} ➔ `;
                 textCtx.fillStyle = '#333333';
-                textCtx.fillText(qTextLeft, leftColX, y);
+                let qLeft = `${i+1}. ${wLeft.present} ➔ `;
+                textCtx.fillText(qLeft, leftColX, y);
+                if (showAnswers) { textCtx.fillStyle = '#e74c3c'; textCtx.fillText(` ( ${wLeft.perfect} )`, leftColX + textCtx.measureText(qLeft).width + 100, y); }
                 
-                if (showAnswers) {
-                    let qWidthLeft = textCtx.measureText(qTextLeft).width;
-                    textCtx.fillStyle = '#e74c3c';
-                    textCtx.fillText(` ( ${wLeft.perfect} )`, leftColX + qWidthLeft + 100, y);
-                }
-                
-                let wRight = wordList[i+5];
-                let qTextRight = `${i+6}. ${wRight.present} ➔ `;
                 textCtx.fillStyle = '#333333';
-                textCtx.fillText(qTextRight, rightColX, y);
-                
-                if (showAnswers) {
-                    let qWidthRight = textCtx.measureText(qTextRight).width;
-                    textCtx.fillStyle = '#e74c3c';
-                    textCtx.fillText(` ( ${wRight.perfect} )`, rightColX + qWidthRight + 100, y);
-                }
+                let qRight = `${i+6}. ${wRight.present} ➔ `;
+                textCtx.fillText(qRight, rightColX, y);
+                if (showAnswers) { textCtx.fillStyle = '#e74c3c'; textCtx.fillText(` ( ${wRight.perfect} )`, rightColX + textCtx.measureText(qRight).width + 100, y); }
             }
         }
 
@@ -390,108 +359,123 @@
             const rect = canvas.getBoundingClientRect();
             let clientX = e.clientX || (e.touches && e.touches[0].clientX);
             let clientY = e.clientY || (e.touches && e.touches[0].clientY);
-            
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            const x = (clientX - rect.left) * scaleX;
-            const y = (clientY - rect.top) * scaleY;
+            const x = (clientX - rect.left) * (canvas.width / rect.width);
+            const y = (clientY - rect.top) * (canvas.height / rect.height);
 
             ctx.lineCap = 'round';
-
             if (currentTool === 'eraser') {
                 ctx.globalCompositeOperation = 'destination-out';
-                ctx.lineWidth = 25; 
-                ctx.strokeStyle = 'rgba(0,0,0,1)'; 
+                ctx.lineWidth = 25; ctx.strokeStyle = 'rgba(0,0,0,1)'; 
             } else {
                 ctx.globalCompositeOperation = 'source-over';
-                ctx.lineWidth = 4;
-                if (currentTool === 'blue') {
-                    ctx.strokeStyle = '#2980b9'; // 藍筆顏色
-                } 
+                ctx.lineWidth = 5; // 加粗筆跡，增加 AI 辨識率
+                ctx.strokeStyle = '#2980b9'; 
             }
-            ctx.lineTo(x, y);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(x, y);
+            ctx.lineTo(x, y); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(x, y);
         }
 
         function clearDrawCanvas() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             document.getElementById('canvasResult').style.display = 'none';
-            setTool('blue');
-            initCanvasText(false); 
+            setTool('blue'); initCanvasText(false); 
         }
 
-        // 獨立出的成績計算器（精準區分「正確」、「大小寫錯誤」、「完全寫錯/漏寫」）
-        function analyzeOCRText(recognizedWords, container) {
+        // 核心 AI 分析與批改引擎 (包含斷字縫合與紅框繪製)
+        function processAndScoreOCR(recognizedWordsArray, container, targetCtx) {
             let score = 0;
-            let feedbackHTML = '<h3>📝 AI 批改結果：</h3>';
             let foundWords = [];
             let caseErrors = [];
             let missedWords = [];
             
-            // 將 AI 辨識到的字統一清除標點，方便比對，但「保留原始大小寫」
-            const cleanWordsList = recognizedWords.map(w => w.text.replace(/[^a-zA-Z]/g, ''));
-
-            wordList.forEach(word => {
-                const target = word.perfect; // e.g., 'asked'
+            // 1. 清理並標記所有辨識到的單字 (修正常見 AI 視覺誤差)
+            let processedWords = recognizedWordsArray.map(w => {
+                let clean = w.text.trim();
+                // 把常見的錯誤看錯的字換回來，避免冤枉學生
+                clean = clean.replace(/1/g, 'l').replace(/0/g, 'o').replace(/5/g, 's');
+                // 移除標點符號，但保留大小寫
+                clean = clean.replace(/[^a-zA-Z]/g, ''); 
                 
-                // 1. 嚴格比對：連大小寫都一模一樣才算對
-                if (cleanWordsList.includes(target)) {
-                    score++;
-                    foundWords.push(target);
-                } else {
-                    // 2. 找找看有沒有人拼對字母，但是大小寫寫錯的 (例如 Asked, ASKED)
-                    const wrongCaseWord = cleanWordsList.find(w => w.toLowerCase() === target.toLowerCase());
+                let isIgnored = ignoreWordsList.includes(clean.toLowerCase());
+                return {
+                    originalBbox: w.bbox,
+                    cleanText: clean,
+                    used: isIgnored, // 如果是題目字，直接標記為已使用，不再處理
+                    isIgnored: isIgnored
+                };
+            });
+
+            // 2. 評分邏輯
+            wordList.forEach(wordObj => {
+                const target = wordObj.perfect;
+                let matched = false;
+
+                // 步驟 A: 先找「單獨完整寫對」的字
+                for (let i = 0; i < processedWords.length; i++) {
+                    if (processedWords[i].used || processedWords[i].cleanText.length === 0) continue;
                     
-                    if (wrongCaseWord) {
-                        caseErrors.push(`<b>${wrongCaseWord}</b> (大小寫錯誤，應為 <b>${target}</b>)`);
-                    } else {
-                        // 3. 真的沒寫，或是拼錯了
-                        missedWords.push(target);
+                    let text = processedWords[i].cleanText;
+                    if (text === target) { // 完全正確
+                        score++; foundWords.push(target);
+                        processedWords[i].used = true; matched = true; break;
+                    } else if (text.toLowerCase() === target.toLowerCase()) { // 大小寫錯誤
+                        caseErrors.push(`<b>${text}</b> (應為 <b>${target}</b>)`);
+                        processedWords[i].used = true; matched = true; break;
                     }
                 }
+
+                if (matched) return;
+
+                // 步驟 B: 「斷字縫合技術」- 如果學生寫太開(ea ten)，把它們連起來看！
+                for (let i = 0; i < processedWords.length - 1; i++) {
+                    if (processedWords[i].used) continue;
+                    
+                    // 嘗試組合相鄰的 2 個或 3 個字 (例如 t a ken)
+                    let w1 = processedWords[i].cleanText;
+                    let w2 = processedWords[i+1] ? processedWords[i+1].cleanText : "";
+                    let w3 = processedWords[i+2] ? processedWords[i+2].cleanText : "";
+                    
+                    let combo2 = w1 + w2;
+                    let combo3 = w1 + w2 + w3;
+
+                    if (combo2 === target || combo3 === target) {
+                        score++; foundWords.push(target);
+                        processedWords[i].used = true; processedWords[i+1].used = true;
+                        if (combo3 === target) processedWords[i+2].used = true;
+                        matched = true; break;
+                    } else if (combo2.toLowerCase() === target.toLowerCase() || combo3.toLowerCase() === target.toLowerCase()) {
+                        caseErrors.push(`大小寫錯誤，應為 <b>${target}</b>`);
+                        processedWords[i].used = true; processedWords[i+1].used = true;
+                        if (combo3.toLowerCase() === target.toLowerCase()) processedWords[i+2].used = true;
+                        matched = true; break;
+                    }
+                }
+
+                if (!matched) missedWords.push(target);
             });
 
-            feedbackHTML += `<p style="font-size: 1.2em;"><strong>🌟 得分： ${score} / 10</strong></p>`;
+            // 3. 繪製紅框 (只框出那些「沒被判定正確/大小寫」且「不是題目」的錯字)
+            targetCtx.save();
+            targetCtx.strokeStyle = '#e74c3c'; 
+            targetCtx.lineWidth = 3;
+            targetCtx.fillStyle = 'rgba(231, 76, 60, 0.15)';
+
+            processedWords.forEach(w => {
+                // 如果這個字沒被用來得分，也不是題目，且有一定長度(避免把小污點畫框)
+                if (!w.used && !w.isIgnored && w.cleanText.length >= 1) {
+                    targetCtx.strokeRect(w.originalBbox.x0 - 2, w.originalBbox.y0 - 2, (w.originalBbox.x1 - w.originalBbox.x0) + 4, (w.originalBbox.y1 - w.originalBbox.y0) + 4);
+                    targetCtx.fillRect(w.originalBbox.x0 - 2, w.originalBbox.y0 - 2, (w.originalBbox.x1 - w.originalBbox.x0) + 4, (w.originalBbox.y1 - w.originalBbox.y0) + 4);
+                }
+            });
+            targetCtx.restore();
+
+            // 4. 顯示文字報告
+            let feedbackHTML = `<h3>📝 AI 批改結果：</h3><p style="font-size: 1.2em;"><strong>🌟 得分： ${score} / 10</strong></p>`;
+            if (foundWords.length > 0) feedbackHTML += `<p style="color: #27ae60;">✅ <b>完全正確：</b><br>${foundWords.join(', ')}</p>`;
+            if (caseErrors.length > 0) feedbackHTML += `<p style="color: #d35400;">⚠️ <b>大小寫錯誤 (不給分)：</b><br>${caseErrors.join('<br>')}</p>`;
+            if (missedWords.length > 0) feedbackHTML += `<p style="color: #c0392b;">❌ <b>未作答或拼錯的字：</b><br>${missedWords.join(', ')}</p>`;
             
-            if (foundWords.length > 0) {
-                feedbackHTML += `<p style="color: #27ae60;">✅ <b>完全正確：</b><br>${foundWords.join(', ')}</p>`;
-            }
-            if (caseErrors.length > 0) {
-                feedbackHTML += `<p style="color: #d35400;">⚠️ <b>大小寫錯誤 (不給分)：</b><br>${caseErrors.join('<br>')}</p>`;
-            }
-            if (missedWords.length > 0) {
-                feedbackHTML += `<p style="color: #c0392b;">❌ <b>未作答或拼錯的字：</b><br>${missedWords.join(', ')}</p>`;
-            }
-
             container.innerHTML = feedbackHTML;
-        }
-
-        function highlightMistakes(targetCtx, recognizedWords) {
-            const perfectWords = wordList.map(w => w.perfect); // 這裡面全是小寫
-
-            recognizedWords.forEach(w => {
-                const text = w.text.trim();
-                const exactText = text.replace(/[^a-zA-Z]/g, '');
-                const lowerText = exactText.toLowerCase();
-
-                if (!exactText || exactText.length < 2) return; 
-                if (ignoreWordsList.includes(lowerText)) return; 
-                
-                // 只要不是「完全一模一樣的小寫單字」，就會被畫上紅框
-                // 也就是說 Asked 會因為不等於 asked，被順利畫上紅框！
-                if (perfectWords.includes(exactText)) return; 
-
-                targetCtx.save();
-                targetCtx.strokeStyle = '#e74c3c'; 
-                targetCtx.lineWidth = 3;
-                targetCtx.strokeRect(w.bbox.x0 - 2, w.bbox.y0 - 2, (w.bbox.x1 - w.bbox.x0) + 4, (w.bbox.y1 - w.bbox.y0) + 4);
-                
-                targetCtx.fillStyle = 'rgba(231, 76, 60, 0.15)';
-                targetCtx.fillRect(w.bbox.x0 - 2, w.bbox.y0 - 2, (w.bbox.x1 - w.bbox.x0) + 4, (w.bbox.y1 - w.bbox.y0) + 4);
-                targetCtx.restore();
-            });
         }
 
         async function checkCanvasOCR() {
@@ -499,35 +483,25 @@
             const btn = document.getElementById('btnCanvasOCR');
             
             resultBox.style.display = 'block';
-            resultBox.innerHTML = '<p class="loading">⏳ AI 正在單獨閱讀你的藍色筆跡，請稍候...</p>';
+            resultBox.innerHTML = '<p class="loading">⏳ AI 正在使用斷字縫合技術閱讀你的筆跡...</p>';
             btn.disabled = true;
 
             try {
                 const tempCanvas = document.createElement('canvas');
-                tempCanvas.width = canvas.width;
-                tempCanvas.height = canvas.height;
+                tempCanvas.width = canvas.width; tempCanvas.height = canvas.height;
                 const tempCtx = tempCanvas.getContext('2d');
-                
-                tempCtx.fillStyle = '#ffffff';
-                tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                tempCtx.fillStyle = '#ffffff'; tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
                 tempCtx.drawImage(canvas, 0, 0);
 
-                const dataUrl = tempCanvas.toDataURL("image/png");
-                const { data: { words } } = await Tesseract.recognize(dataUrl, 'eng');
-                
-                analyzeOCRText(words, resultBox); // 傳入 words 陣列做精準分析
-                highlightMistakes(ctx, words);
-
+                const { data: { words } } = await Tesseract.recognize(tempCanvas.toDataURL("image/png"), 'eng');
+                processAndScoreOCR(words, resultBox, ctx);
                 initCanvasText(true);
-
             } catch (error) {
-                resultBox.innerHTML = `<p style="color:red;">❌ 辨識發生錯誤：${error.message}</p>`;
-            } finally {
-                btn.disabled = false;
-            }
+                resultBox.innerHTML = `<p style="color:red;">❌ 辨識錯誤：${error.message}</p>`;
+            } finally { btn.disabled = false; }
         }
 
-        // --- 第三部分：上傳與截圖邏輯 ---
+        // --- 拍照上傳區塊 ---
         function previewUpload(event) {
             if(!event.target.files[0]) return;
             const reader = new FileReader();
@@ -538,35 +512,33 @@
                     const uCanvas = document.getElementById('uploadCanvas');
                     const uCtx = uCanvas.getContext('2d');
                     
-                    // 為了提升 Tesseract 對實體照片的判讀率，限制最大寬度並進行縮放
-                    const MAX_WIDTH = 1200;
-                    let scale = 1;
-                    if (img.width > MAX_WIDTH) {
-                        scale = MAX_WIDTH / img.width;
-                    }
+                    let scale = img.width > 1200 ? 1200 / img.width : 1;
                     uCanvas.width = img.width * scale;
                     uCanvas.height = img.height * scale;
-                    
-                    // 【重點優化】：加入灰階與對比度濾鏡，讓照片上的字跡變得黑白分明，減少陰影雜訊
-                    uCtx.filter = 'grayscale(100%) contrast(150%) brightness(110%)';
                     uCtx.drawImage(img, 0, 0, uCanvas.width, uCanvas.height);
                     
-                    // 畫完之後重置濾鏡，以免等一下畫的紅框變成黑白的
-                    uCtx.filter = 'none';
+                    // 真・像素級二值化 (徹底消除相片陰影)
+                    const imageData = uCtx.getImageData(0, 0, uCanvas.width, uCanvas.height);
+                    const data = imageData.data;
+                    for (let i = 0; i < data.length; i += 4) {
+                        // 計算亮度，如果像素偏暗(墨水)就變純黑，偏亮(紙張/陰影)就變純白
+                        const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                        const threshold = 145; // 亮度閾值
+                        const color = brightness < threshold ? 0 : 255;
+                        data[i] = color; data[i + 1] = color; data[i + 2] = color;
+                    }
+                    uCtx.putImageData(imageData, 0, 0);
                     
                     uCanvas.style.display = 'inline-block';
-                    
                     const resultBox = document.getElementById('uploadResult');
                     resultBox.style.display = 'block';
-                    resultBox.innerHTML = '<p class="loading">⏳ 照片已進行「黑白對比增強」處理！AI 正在分析筆跡中...</p>';
+                    resultBox.innerHTML = '<p class="loading">⏳ 照片已進行「像素級漂白」！AI 正在分析...</p>';
                     document.getElementById('btnScreenshot').style.display = 'none';
-                    
                     checkUploadOCR();
                 }
                 img.src = e.target.result;
             }
             reader.readAsDataURL(event.target.files[0]);
-            
             event.target.value = '';
         }
 
@@ -579,9 +551,7 @@
                 const uCtx = uCanvas.getContext('2d');
                 const { data: { words } } = await Tesseract.recognize(uCanvas.toDataURL(), 'eng');
                 
-                analyzeOCRText(words, resultBox); // 傳入 words 陣列做精準分析
-                highlightMistakes(uCtx, words);
-                
+                processAndScoreOCR(words, resultBox, uCtx);
                 screenshotBtn.style.display = 'inline-block';
             } catch (error) {
                 resultBox.innerHTML = `<p style="color:red;">❌ 辨識發生錯誤：${error.message}</p>`;
@@ -589,67 +559,35 @@
         }
 
         function takeScreenshot() {
-            const element = document.getElementById('screenshotArea');
             const btn = document.getElementById('btnScreenshot');
-            const originalText = btn.innerText;
-            
-            btn.innerText = '📸 正在處理成績單...';
-            btn.disabled = true;
+            const originalText = btn.innerText; btn.innerText = '📸 處理中...'; btn.disabled = true;
 
-            html2canvas(element, { 
-                backgroundColor: '#ffffff',
-                scale: 2 
-            }).then(canvas => {
+            html2canvas(document.getElementById('screenshotArea'), { backgroundColor: '#ffffff', scale: 2 }).then(canvas => {
                 canvas.toBlob(async (blob) => {
-                    const fileName = '默書成績單.png';
-                    const file = new File([blob], fileName, { type: 'image/png' });
-                    
+                    const file = new File([blob], '默書成績單.png', { type: 'image/png' });
                     if (navigator.canShare && navigator.canShare({ files: [file] })) {
                         try {
-                            await navigator.share({
-                                files: [file],
-                                title: '我的默書成績單',
-                                text: '這是我剛剛完成的英文默書成績！'
-                            });
-                            btn.innerText = originalText;
-                            btn.disabled = false;
-                        } catch (err) {
-                            console.log("分享取消或失敗，改用傳統下載", err);
-                            forceDownload(canvas.toDataURL('image/png'), fileName);
-                        }
-                    } else {
-                        forceDownload(canvas.toDataURL('image/png'), fileName);
-                    }
+                            await navigator.share({ files: [file], title: '成績單', text: '我的默書成績！' });
+                        } catch (err) { forceDownload(canvas.toDataURL('image/png'), '默書成績單.png'); }
+                    } else { forceDownload(canvas.toDataURL('image/png'), '默書成績單.png'); }
+                    btn.innerText = originalText; btn.disabled = false;
                 }, 'image/png');
-            }).catch(err => {
-                alert("截圖發生錯誤：" + err);
-                btn.innerText = originalText;
-                btn.disabled = false;
             });
 
             function forceDownload(dataUrl, filename) {
-                const link = document.createElement('a');
-                link.download = filename;
-                link.href = dataUrl;
-                link.click();
-                btn.innerText = originalText;
-                btn.disabled = false;
+                const link = document.createElement('a'); link.download = filename; link.href = dataUrl;
+                link.click(); btn.innerText = originalText; btn.disabled = false;
             }
         }
 
-        // 事件監聽 (畫布繪圖)
         canvas.addEventListener('mousedown', startPosition);
         canvas.addEventListener('mouseup', endPosition);
         canvas.addEventListener('mousemove', draw);
-        // 支援觸控螢幕
         canvas.addEventListener('touchstart', startPosition, {passive: false});
         canvas.addEventListener('touchend', endPosition);
         canvas.addEventListener('touchmove', draw, {passive: false});
 
-        window.onload = () => {
-            initTable();
-            initCanvasText(false);
-        };
+        window.onload = () => { initTable(); initCanvasText(false); };
     </script>
 </body>
 </html>
