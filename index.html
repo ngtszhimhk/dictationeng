@@ -2,7 +2,7 @@
 <html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>英文默書練習 - 編程設計：伍子謙老師</title>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
     <style>
@@ -10,7 +10,7 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f4f7f6;
             margin: 0;
-            padding: 20px;
+            padding: 15px;
             color: #333;
         }
         .header {
@@ -22,20 +22,17 @@
             margin-bottom: 20px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-        .header h1 {
-            margin: 0;
-            font-size: 1.8em;
-        }
-        .header h2 {
-            margin: 10px 0 0 0;
-            font-size: 1.2em;
-            font-weight: normal;
-        }
+        .header h1 { margin: 0; font-size: 1.8em; }
+        .header h2 { margin: 10px 0 0 0; font-size: 1.2em; font-weight: normal; }
+        
+        /* 表格基本設定 */
         table {
             width: 100%;
             border-collapse: collapse;
             background: white;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
         }
         th, td {
             border: 1px solid #ddd;
@@ -50,24 +47,26 @@
         .word-cell {
             font-size: 1.2em;
             font-weight: bold;
+            color: #333;
         }
-        /* 四線譜畫布設計 (內高100px) */
+        
+        /* 四線譜畫布設計 (內高40px) */
         .canvas-wrapper {
             position: relative;
             display: inline-block;
         }
         .canvas-container {
-            width: 400px; /* 確保夠闊寫字 */
-            height: 300px; /* 3個間距，每個100px */
+            width: 300px; 
+            height: 120px; 
             background-color: transparent;
-            /* 繪製四線譜的線條 */
             background-image: 
-                linear-gradient(transparent 98px, #ff9999 99px, #ff9999 100px, transparent 101px),
-                linear-gradient(transparent 198px, #99ccff 199px, #99ccff 200px, transparent 201px);
+                linear-gradient(transparent 38px, #ff9999 39px, #ff9999 40px, transparent 41px),
+                linear-gradient(transparent 78px, #99ccff 79px, #99ccff 80px, transparent 81px);
             border-top: 2px solid #ff9999;
             border-bottom: 2px solid #ff9999;
             box-sizing: border-box;
             position: relative;
+            margin: 0 auto;
         }
         canvas {
             position: absolute;
@@ -78,60 +77,70 @@
             touch-action: none; /* 防止觸控時螢幕滾動 */
             cursor: crosshair;
         }
+        
+        /* 工具按鈕 */
+        .tools-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+        }
         .icon-btn {
-            background: none;
-            border: none;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
             font-size: 1.5em;
             cursor: pointer;
-            margin: 0 5px;
-            transition: transform 0.2s;
+            padding: 5px 10px;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
-        .icon-btn:hover {
-            transform: scale(1.2);
-        }
+        .icon-btn:hover { transform: scale(1.1); }
         .active-tool {
             background-color: #e0f7fa;
-            border-radius: 5px;
-            border: 1px solid #00bcd4;
+            border-color: #00bcd4;
         }
+        
         .result-icon {
             font-size: 2em;
             margin-left: 10px;
-            vertical-align: top;
+            vertical-align: middle;
             display: inline-block;
-            margin-top: 120px;
         }
         .correct-answer-col {
             color: #d32f2f;
             font-weight: bold;
-            font-size: 1.2em;
+            font-size: 1.3em;
+            min-width: 100px;
         }
+        
+        /* 控制按鈕區 */
         .controls {
             text-align: center;
             margin: 30px 0;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
         }
         .controls button {
             font-size: 1.2em;
-            padding: 10px 30px;
-            margin: 0 10px;
+            padding: 12px 30px;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
             box-shadow: 0 4px 6px rgba(0,0,0,0.2);
             transition: background 0.3s;
+            font-weight: bold;
         }
-        #btn-grade {
-            background-color: #2196F3;
-            color: white;
-        }
+        #btn-grade { background-color: #2196F3; color: white; }
         #btn-grade:hover { background-color: #1976D2; }
         #btn-grade:disabled { background-color: #90CAF9; cursor: not-allowed; }
-        #btn-clear {
-            background-color: #ff9800;
-            color: white;
-        }
+        #btn-clear { background-color: #ff9800; color: white; }
         #btn-clear:hover { background-color: #f57c00; }
         
+        /* 回饋區塊 */
         #feedback-section {
             background: white;
             padding: 20px;
@@ -141,7 +150,7 @@
             display: none;
         }
         .score-display {
-            font-size: 1.5em;
+            font-size: 1.8em;
             color: #d32f2f;
             font-weight: bold;
             text-align: center;
@@ -152,6 +161,79 @@
             border-left: 5px solid #2196F3;
             margin: 20px 0;
             border-radius: 4px;
+            line-height: 1.6;
+        }
+
+        /* =========================================
+           響應式設計 (Responsive Media Queries) 
+           針對平板與手機螢幕 (小於 900px)
+           ========================================= */
+        @media screen and (max-width: 900px) {
+            .header h1 { font-size: 1.5em; }
+            .header h2 { font-size: 1.1em; }
+            
+            /* 將表格轉換成卡片式排列 */
+            table, thead, tbody, th, td, tr {
+                display: block;
+                width: 100%;
+                box-sizing: border-box;
+            }
+            thead {
+                display: none; /* 隱藏表格標題列 */
+            }
+            tr {
+                margin-bottom: 20px;
+                border: 2px solid #4CAF50;
+                border-radius: 10px;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                padding: 15px 10px;
+                background: #fff;
+                position: relative;
+            }
+            td {
+                border: none;
+                padding: 10px 0;
+                text-align: center;
+            }
+            /* 卡片內的排版微調 */
+            td:nth-child(1) { /* No. */
+                display: inline-block;
+                background: #4CAF50;
+                color: white;
+                padding: 5px 15px;
+                border-radius: 20px;
+                font-weight: bold;
+                margin-bottom: 10px;
+            }
+            td:nth-child(2) { /* Present tense */
+                display: block;
+                font-size: 1.5em;
+                margin-bottom: 10px;
+            }
+            .tools-container {
+                flex-direction: row; /* 工具按鈕在手機上橫向排列 */
+            }
+            .canvas-wrapper {
+                display: block;
+            }
+            .result-icon {
+                display: block;
+                margin-top: 10px;
+                margin-left: 0;
+            }
+            .correct-answer-col {
+                background: #ffebee;
+                padding: 10px;
+                border-radius: 5px;
+                margin-top: 10px;
+            }
+            .correct-answer-col:empty {
+                display: none; /* 未批改前隱藏答案框 */
+            }
+            .controls button {
+                width: 100%; /* 手機上按鈕佔滿寬度 */
+                max-width: 300px;
+            }
         }
     </style>
 </head>
@@ -200,7 +282,6 @@
     </div>
 
     <script>
-        // 修正了原圖中第8題重複的編號問題（get改為9）
         const words = [
             { id: 1, present: "ask", perfect: "asked", rule: "規則變化：字尾直接加 -ed" },
             { id: 2, present: "look", perfect: "looked", rule: "規則變化：字尾直接加 -ed" },
@@ -215,33 +296,33 @@
         ];
 
         const tbody = document.getElementById('exercise-body');
-        const contexts = {}; // 儲存畫布的 context
+        const contexts = {};
 
-        // 語音發音功能
         function speak(text) {
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'en-US';
             window.speechSynthesis.speak(utterance);
         }
 
-        // 初始化表格與畫布
         words.forEach(word => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td>${word.id}</td>
+                <td>Question ${word.id}</td>
                 <td class="word-cell">
                     ${word.present} 
                     <button class="icon-btn" onclick="speak('${word.present}')" title="讀出 Present tense">🔊</button>
                 </td>
                 <td>
-                    <button class="icon-btn" onclick="speak('${word.perfect}')" title="讀出答案發音">🔊</button><br>
-                    <button class="icon-btn tool-pen active-tool" data-id="${word.id}" title="藍筆">🖊️</button><br>
-                    <button class="icon-btn tool-eraser" data-id="${word.id}" title="迷你膠擦">🧽</button>
+                    <div class="tools-container">
+                        <button class="icon-btn" onclick="speak('${word.perfect}')" title="讀出答案發音">🔊</button>
+                        <button class="icon-btn tool-pen active-tool" data-id="${word.id}" title="藍筆">🖊️</button>
+                        <button class="icon-btn tool-eraser" data-id="${word.id}" title="迷你膠擦">🧽</button>
+                    </div>
                 </td>
                 <td>
                     <div class="canvas-wrapper">
                         <div class="canvas-container">
-                            <canvas id="canvas-${word.id}" width="400" height="300"></canvas>
+                            <canvas id="canvas-${word.id}" width="300" height="120"></canvas>
                         </div>
                         <span class="result-icon" id="icon-${word.id}"></span>
                     </div>
@@ -250,15 +331,13 @@
             `;
             tbody.appendChild(tr);
 
-            // 設定畫布繪圖功能
             const canvas = document.getElementById(`canvas-${word.id}`);
             const ctx = canvas.getContext('2d');
             contexts[word.id] = ctx;
             
-            // 預設藍筆設定
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
-            ctx.lineWidth = 4;
+            ctx.lineWidth = 3;
             ctx.strokeStyle = '#0000FF';
 
             let isDrawing = false;
@@ -275,10 +354,9 @@
 
             const draw = (e) => {
                 if (!isDrawing) return;
-                e.preventDefault(); // 防止手機滑動
+                e.preventDefault(); 
                 
                 const rect = canvas.getBoundingClientRect();
-                // 支援滑鼠與觸控
                 const clientX = e.touches ? e.touches[0].clientX : e.clientX;
                 const clientY = e.touches ? e.touches[0].clientY : e.clientY;
                 
@@ -296,22 +374,19 @@
             canvas.addEventListener('mousemove', draw);
             canvas.addEventListener('mouseout', endPosition);
 
-            // 觸控事件
             canvas.addEventListener('touchstart', startPosition, { passive: false });
             canvas.addEventListener('touchend', endPosition);
             canvas.addEventListener('touchmove', draw, { passive: false });
         });
 
-        // 綁定工具按鈕 (藍筆 / 膠擦)
         document.querySelectorAll('.tool-pen').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const id = e.currentTarget.getAttribute('data-id');
                 const ctx = contexts[id];
                 ctx.globalCompositeOperation = 'source-over';
                 ctx.strokeStyle = '#0000FF';
-                ctx.lineWidth = 4;
+                ctx.lineWidth = 3; 
                 
-                // UI 更新
                 document.querySelector(`.tool-eraser[data-id="${id}"]`).classList.remove('active-tool');
                 e.currentTarget.classList.add('active-tool');
             });
@@ -321,17 +396,14 @@
             btn.addEventListener('click', (e) => {
                 const id = e.currentTarget.getAttribute('data-id');
                 const ctx = contexts[id];
-                // 使用 destination-out 實現真實擦除效果，不影響背景的 CSS 四線譜
                 ctx.globalCompositeOperation = 'destination-out';
-                ctx.lineWidth = 30; // 膠擦範圍大一點
+                ctx.lineWidth = 20; 
                 
-                // UI 更新
                 document.querySelector(`.tool-pen[data-id="${id}"]`).classList.remove('active-tool');
                 e.currentTarget.classList.add('active-tool');
             });
         });
 
-        // AI 自動批改功能 (使用 Tesseract.js)
         document.getElementById('btn-grade').addEventListener('click', async () => {
             const btn = document.getElementById('btn-grade');
             btn.disabled = true;
@@ -344,7 +416,6 @@
                 const word = words[i];
                 const canvas = document.getElementById(`canvas-${word.id}`);
                 
-                // 為了讓 OCR 準確，需要建立一個白色背景的臨時畫布來合併學生的筆跡
                 const tempCanvas = document.createElement('canvas');
                 tempCanvas.width = canvas.width;
                 tempCanvas.height = canvas.height;
@@ -353,33 +424,29 @@
                 tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
                 tempCtx.drawImage(canvas, 0, 0);
 
-                // 取得影像數據交給 Tesseract
                 const dataUrl = tempCanvas.toDataURL('image/png');
                 
                 try {
                     const result = await Tesseract.recognize(dataUrl, 'eng');
-                    // 移除所有空白，避免 OCR 產生多餘空白，並嚴格保留大小寫
                     const recognizedText = result.data.text.replace(/\s+/g, ''); 
                     const correctAns = word.perfect;
                     
-                    // 嚴格比對 (大小寫必須完全一致)
                     const isCorrect = (recognizedText === correctAns);
 
-                    // 顯示 Tick 或 Cross
                     const iconEl = document.getElementById(`icon-${word.id}`);
                     iconEl.innerHTML = isCorrect ? '✔️' : '❌';
                     iconEl.style.color = isCorrect ? 'green' : 'red';
 
-                    // 顯示右側正確答案
-                    document.getElementById(`correct-${word.id}`).innerText = correctAns;
+                    document.getElementById(`correct-${word.id}`).innerText = isCorrect ? '✔️ 答對了' : `正確答案: ${correctAns}`;
+                    document.getElementById(`correct-${word.id}`).style.color = isCorrect ? 'green' : '#d32f2f';
 
                     if (isCorrect) {
                         score++;
                     } else {
                         feedbackHTML += `<li><strong>第 ${word.id} 題 (${word.present})：</strong><br> 
-                        AI 辨識你的字跡為「<span style="color:red">${recognizedText || "(空白)"}</span>」。<br>
-                        正確答案是「<span style="color:green">${correctAns}</span>」。<br>
-                        <small>📝 變化規則：${word.rule}</small></li><br>`;
+                        AI 辨識為「<span style="color:red">${recognizedText || "(空白)"}</span>」。<br>
+                        正確是「<span style="color:green">${correctAns}</span>」。<br>
+                        <small>📝 規則：${word.rule}</small></li><br>`;
                     }
                 } catch (error) {
                     console.error("OCR 錯誤:", error);
@@ -391,16 +458,17 @@
                 feedbackHTML = "<h3>🎉 太棒了！全部正確！AI 給你 100 分！</h3>";
             }
 
-            // 顯示結果與回饋
             document.getElementById('score-text').innerText = score;
             document.getElementById('detailed-feedback').innerHTML = feedbackHTML;
             document.getElementById('feedback-section').style.display = 'block';
 
             btn.disabled = false;
             btn.innerText = "🤖 AI自動批改";
+            
+            // 批改完成後自動向下捲動到分數區
+            document.getElementById('feedback-section').scrollIntoView({ behavior: 'smooth' });
         });
 
-        // 清屏重默功能
         document.getElementById('btn-clear').addEventListener('click', () => {
             if(confirm("確定要清除所有筆跡重新開始嗎？")) {
                 words.forEach(word => {
@@ -411,15 +479,15 @@
                     document.getElementById(`icon-${word.id}`).innerHTML = '';
                     document.getElementById(`correct-${word.id}`).innerText = '';
                     
-                    // 重設回藍筆
                     ctx.globalCompositeOperation = 'source-over';
                     ctx.strokeStyle = '#0000FF';
-                    ctx.lineWidth = 4;
+                    ctx.lineWidth = 3;
                     document.querySelector(`.tool-eraser[data-id="${word.id}"]`).classList.remove('active-tool');
                     document.querySelector(`.tool-pen[data-id="${word.id}"]`).classList.add('active-tool');
                 });
                 
                 document.getElementById('feedback-section').style.display = 'none';
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         });
     </script>
