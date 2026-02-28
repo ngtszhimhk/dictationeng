@@ -1,694 +1,204 @@
 <!DOCTYPE html>
-<html lang="zh-HK">
+<html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Second Dictation - Unit 2 Helper</title>
+    <title>小五英文默書助手 - Part A Verb Table</title>
     <style>
-        :root {
-            --primary-color: #4a90e2;
-            --secondary-color: #f5f7fa;
-            --text-color: #333;
-            --success-color: #2ecc71;
-            --error-color: #e74c3c;
-        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f7ff; color: #333; line-height: 1.6; padding: 20px; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; text-align: center; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        
+        /* 表格樣式 */
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; background: #fff; }
+        th, td { border: 1px solid #bdc3c7; padding: 12px; text-align: center; }
+        th { background-color: #3498db; color: white; }
+        input[type="text"] { width: 90%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f4f8;
-            color: var(--text-color);
-            margin: 0;
-            padding: 20px;
-            line-height: 1.6;
-        }
+        /* 畫布樣式 */
+        .canvas-container { position: relative; margin: 20px 0; border: 2px solid #3498db; border-radius: 8px; background: #fff; overflow: hidden; }
+        canvas { cursor: crosshair; display: block; background-image: linear-gradient(#e1e1e1 1px, transparent 1px); background-size: 100% 40px; }
+        .canvas-controls { margin-top: 10px; display: flex; gap: 10px; justify-content: center; }
 
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
+        /* 按鈕樣式 */
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; border: none; border-radius: 5px; transition: 0.3s; }
+        .btn-check { background-color: #27ae60; color: white; }
+        .btn-clear { background-color: #e74c3c; color: white; }
+        .btn-upload { background-color: #8e44ad; color: white; }
+        button:hover { opacity: 0.8; }
 
-        h1, h2 {
-            text-align: center;
-            color: var(--primary-color);
-        }
-
-        h1 { margin-bottom: 10px; }
-        .subtitle { text-align: center; color: #666; margin-bottom: 30px; }
-
-        /* Part A Styles */
-        .part-section {
-            margin-bottom: 40px;
-            padding: 20px;
-            border: 1px solid #e1e4e8;
-            border-radius: 10px;
-            background-color: #fff;
-        }
-
-        .verb-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-
-        .verb-table th, .verb-table td {
-            border: 1px solid #ddd;
-            padding: 12px;
-            text-align: left;
-        }
-
-        .verb-table th {
-            background-color: var(--primary-color);
-            color: white;
-        }
-
-        .verb-table input {
-            width: 90%;
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 16px;
-        }
-
-        /* Part B Styles */
-        .vocab-controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background 0.3s;
-        }
-
-        .btn-shuffle {
-            background-color: #f39c12;
-            color: white;
-        }
-        .btn-shuffle:hover { background-color: #d35400; }
-
-        .vocab-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-        }
-
-        .vocab-btn {
-            background-color: var(--secondary-color);
-            border: 2px solid var(--primary-color);
-            color: var(--primary-color);
-            padding: 15px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            transition: all 0.3s;
-        }
-
-        .vocab-btn:hover {
-            background-color: var(--primary-color);
-            color: white;
-        }
-
-        .vocab-btn.playing {
-            background-color: var(--primary-color);
-            color: white;
-            transform: scale(1.05);
-            box-shadow: 0 0 10px rgba(74, 144, 226, 0.5);
-        }
-
-        /* Part C Styles */
-        .passage-controls {
-            margin-bottom: 20px;
-        }
-
-        .toggle-passage-btn {
-            background-color: #9b59b6;
-            color: white;
-            padding: 12px 25px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            margin-bottom: 15px;
-        }
-
-        .toggle-passage-btn:hover {
-            background-color: #8e44ad;
-        }
-
-        .passage-text {
-            background-color: #f9f9f9;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 18px;
-            line-height: 2;
-            border-left: 5px solid var(--primary-color);
-            transition: all 0.3s;
-        }
-
-        .passage-text.hidden {
-            display: none;
-        }
-
-        .speed-control {
-            margin-bottom: 20px;
-            padding: 15px;
-            background-color: #f0f4f8;
-            border-radius: 8px;
-        }
-
-        .speed-control label {
-            font-weight: bold;
-            margin-right: 10px;
-        }
-
-        .speed-select {
-            padding: 8px 15px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            font-size: 16px;
-        }
-
-        .word-chunks {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .chunk-btn {
-            background-color: #3498db;
-            color: white;
-            border: none;
-            padding: 12px 18px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 15px;
-            transition: all 0.3s;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-
-        .chunk-btn:hover {
-            background-color: #2980b9;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-        }
-
-        .chunk-btn.active {
-            background-color: #e74c3c;
-            animation: pulse 0.5s;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-
-        .section-title {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 8px 15px;
-            border-radius: 5px;
-            margin: 20px 0 10px 0;
-            font-weight: bold;
-            display: inline-block;
-        }
-
-        /* Part D (Grading) Styles */
-        .upload-area {
-            border: 2px dashed #ccc;
-            padding: 40px;
-            text-align: center;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: border-color 0.3s;
-        }
-
-        .upload-area:hover {
-            border-color: var(--primary-color);
-            background-color: #f0f8ff;
-        }
-
-        #fileInput { display: none; }
-
-        .result-box {
-            display: none;
-            margin-top: 20px;
-            padding: 20px;
-            background: #e8f5e9;
-            border-radius: 8px;
-            border: 1px solid #c8e6c9;
-        }
-
-        .score-item {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-            font-size: 18px;
-        }
-
-        .total-score {
-            font-size: 24px;
-            font-weight: bold;
-            text-align: right;
-            color: var(--primary-color);
-            border-top: 2px solid #ccc;
-            padding-top: 10px;
-            margin-top: 10px;
-        }
-
-        .suggestion {
-            margin-top: 15px;
-            color: #d35400;
-            font-style: italic;
-        }
-
-        /* Loading Animation */
-        .loader {
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid var(--primary-color);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-            display: none;
-        }
-
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        .instruction {
-            background-color: #fff3cd;
-            border: 1px solid #ffc107;
-            padding: 10px 15px;
-            border-radius: 5px;
-            margin-bottom: 15px;
-            color: #856404;
-        }
-
+        /* 結果顯示 */
+        #result, #photo-result { margin-top: 20px; padding: 15px; border-radius: 8px; display: none; }
+        .correct { color: green; font-weight: bold; }
+        .wrong { color: red; text-decoration: line-through; }
+        .suggestion { font-style: italic; color: #555; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Second Dictation</h1>
-    <div class="subtitle">Unit 2 - 五年級英文默書助手</div>
-
-    <!-- Part A -->
-    <div class="part-section" id="partA">
-        <h2>Part A: Verb table (10%)</h2>
-        <p>請在輸入框中填寫 Present Perfect (has/have) 的形式。</p>
-        <table class="verb-table">
-            <thead>
-                <tr>
-                    <th>No.</th>
-                    <th>Present tense</th>
-                    <th>Present Perfect (has/have)</th>
-                    <th>No.</th>
-                    <th>Present tense</th>
-                    <th>Present Perfect (has/have)</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr><td>1.</td><td>ask</td><td><input type="text" id="a1" data-ans="asked"></td><td>6.</td><td>eat</td><td><input type="text" id="a6" data-ans="eaten"></td></tr>
-                <tr><td>2.</td><td>look</td><td><input type="text" id="a2" data-ans="looked"></td><td>7.</td><td>ride</td><td><input type="text" id="a7" data-ans="ridden"></td></tr>
-                <tr><td>3.</td><td>shout</td><td><input type="text" id="a3" data-ans="shouted"></td><td>8.</td><td>take</td><td><input type="text" id="a8" data-ans="taken"></td></tr>
-                <tr><td>4.</td><td>tidy</td><td><input type="text" id="a4" data-ans="tidied"></td><td>9.</td><td>get</td><td><input type="text" id="a9" data-ans="got"></td></tr>
-                <tr><td>5.</td><td>study</td><td><input type="text" id="a5" data-ans="studied"></td><td>10.</td><td>sit</td><td><input type="text" id="a10" data-ans="sat"></td></tr>
-            </tbody>
+    <h1>📝 小五英文默書助手 (Part A)</h1>
+    
+    <section>
+        <h3>Part A: Verb Table (10%)</h3>
+        <p>請填寫對應的 Present Perfect (has/have + Past Participle) 形式：</p>
+        
+        <table id="verbTable">
+            <tr>
+                <th>Present Tense</th>
+                <th>Present Perfect</th>
+                <th>Present Tense</th>
+                <th>Present Perfect</th>
+            </tr>
+            <tr>
+                <td>1. ask</td><td><input type="text" id="v1" placeholder="---"></td>
+                <td>6. eat</td><td><input type="text" id="v6" placeholder="---"></td>
+            </tr>
+            <tr>
+                <td>2. look</td><td><input type="text" id="v2" placeholder="---"></td>
+                <td>7. ride</td><td><input type="text" id="v7" placeholder="---"></td>
+            </tr>
+            <tr>
+                <td>3. shout</td><td><input type="text" id="v3" placeholder="---"></td>
+                <td>8. take</td><td><input type="text" id="v8" placeholder="---"></td>
+            </tr>
+            <tr>
+                <td>4. tidy</td><td><input type="text" id="v4" placeholder="---"></td>
+                <td>9. get</td><td><input type="text" id="v9" placeholder="---"></td>
+            </tr>
+            <tr>
+                <td>5. study</td><td><input type="text" id="v5" placeholder="---"></td>
+                <td>10. sit</td><td><input type="text" id="v10" placeholder="---"></td>
+            </tr>
         </table>
-        <button class="btn" style="margin-top:10px; background:#ddd;" onclick="checkPartA()">核對 Part A 答案</button>
-        <div id="partAFeedback" style="margin-top:10px; font-weight:bold;"></div>
-    </div>
+    </section>
 
-    <!-- Part B -->
-    <div class="part-section" id="partB">
-        <h2>Part B: Vocabulary (30%)</h2>
-        <div class="vocab-controls">
-            <span>請點擊按鈕聽發音並默寫。（發音已調慢）</span>
-            <button class="btn btn-shuffle" onclick="shuffleVocab()">🔀 重置隨機次序</button>
-        </div>
-        <div class="vocab-grid" id="vocabGrid">
-            <!-- Buttons will be generated by JS -->
-        </div>
-    </div>
+    <hr>
 
-    <!-- Part C -->
-    <div class="part-section" id="partC">
-        <h2>Part C: Passage (60%)</h2>
-        <div class="instruction">
-            💡 提示：每個按鈕讀出三個字詞（包括標點符號）。可按多次重聽。建議先隱藏文章再開始默書。
+    <section>
+        <h3>🎨 Apple Pencil 畫布默寫區</h3>
+        <p>請直接在表格內書寫答案，完成後點擊「自動批改畫布」。</p>
+        <div class="canvas-container">
+            <canvas id="writeCanvas" width="840" height="400"></canvas>
         </div>
-        
-        <div class="passage-controls">
-            <button class="toggle-passage-btn" onclick="togglePassage()">👁️ 隱藏文章</button>
+        <div class="canvas-controls">
+            <button class="btn-clear" onclick="clearCanvas()">清除畫布</button>
+            <button class="btn-check" onclick="analyzeCanvas()">自動批改畫布 (AI分析)</button>
         </div>
+    </section>
 
-        <div class="speed-control">
-            <label for="speedSelect">🎵 讀默速度：</label>
-            <select id="speedSelect" class="speed-select" onchange="setSpeed(this.value)">
-                <option value="0.4">超慢速 (0.4x) - 適合初學</option>
-                <option value="0.5">很慢速 (0.5x) - 適合跟讀</option>
-                <option value="0.6">慢速 (0.6x) - 適合默書</option>
-                <option value="0.7">較慢速 (0.7x)</option>
-                <option value="0.8">中慢速 (0.8x)</option>
-                <option value="0.9">稍慢速 (0.9x)</option>
-                <option value="1" selected>正常速度 (1.0x)</option>
-                <option value="1.1">稍快速 (1.1x)</option>
-                <option value="1.2">快速 (1.2x)</option>
-            </select>
+    <hr>
+
+    <section>
+        <h3>📷 拍照批改紙上默書</h3>
+        <p>上傳你的默書紙照片，AI 將為你計分及給予建議。</p>
+        <div style="text-align: center;">
+            <input type="file" id="photoInput" accept="image/*" style="display:none">
+            <button class="btn-upload" onclick="document.getElementById('photoInput').click()">選擇/拍攝默書紙</button>
         </div>
+        <div id="photo-result"></div>
+    </section>
 
-        <div id="passageText" class="passage-text">
-            <div class="section-title">Paragraph 1</div>
-            <p>Betty and Billy were a great help to their uncle Eddy on his big day.</p>
-            
-            <div class="section-title">Paragraph 2</div>
-            <p>It was almost time for groom Eddy to give the bride Nicole the wedding ring. He asked his brother Henry for the ring. Henry was the best man. He helped Eddy at the wedding. Henry searched in his pockets, but he could not find it.</p>
-            
-            <div class="section-title">Paragraph 3</div>
-            <p>On Chinese New Year's Eve, I visited the flower market. It was a mandarin tree. Look at the photo. The mandarin tree isn't real, but I love it. It looks very cute.</p>
-        </div>
-
-        <div id="chunkButtons">
-            <!-- Chunk buttons will be generated by JS -->
-        </div>
-    </div>
-
-    <!-- Part D: Grading -->
-    <div class="part-section" id="partD">
-        <h2>Part D: 批改默書紙</h2>
-        <p>完成默書後，請上傳你的默書紙照片，系統將自動批改計分。</p>
-        
-        <div class="upload-area" onclick="document.getElementById('fileInput').click()">
-            <p>📷 點擊此處上傳默書紙照片</p>
-            <p style="font-size: 12px; color: #888;">(支持 JPG, PNG)</p>
-            <input type="file" id="fileInput" accept="image/*" onchange="handleFileUpload(this)">
-        </div>
-
-        <div class="loader" id="loader"></div>
-
-        <div class="result-box" id="resultBox">
-            <h3>📝 批改結果</h3>
-            <div class="score-item">
-                <span>Part A (Verb table):</span>
-                <span id="scoreA">0 / 10</span>
-            </div>
-            <div class="score-item">
-                <span>Part B (Vocabulary):</span>
-                <span id="scoreB">0 / 36</span>
-            </div>
-            <div class="score-item">
-                <span>Part C (Passage):</span>
-                <span id="scoreC">0 / 60</span>
-            </div>
-            <div class="total-score">
-                Total: <span id="totalScore">0</span> / 106
-            </div>
-            <div class="suggestion" id="suggestionText">
-                <!-- Suggestions will appear here -->
-            </div>
-            <button class="btn" style="margin-top:15px; background:#333; color:white;" onclick="resetGrading()">再試一次</button>
-        </div>
-    </div>
-
+    <div id="result"></div>
 </div>
 
 <script>
-    // --- Part B Logic ---
-    const vocabList = [
-        "earrings", "necklace", "ring", "diamond", 
-        "gold", "silver", "spotted", "striped", 
-        "curly", "straight", "turnip cakes", "reunion dinner"
-    ];
-    
-    let currentOrder = [];
-
-    function initVocab() {
-        const grid = document.getElementById('vocabGrid');
-        grid.innerHTML = '';
-        currentOrder = vocabList.map((_, i) => i);
-        
-        for (let i = 0; i < 12; i++) {
-            const btn = document.createElement('button');
-            btn.className = 'vocab-btn';
-            btn.id = `vocabBtn${i}`;
-            btn.innerHTML = `<span>${i + 1}</span>`;
-            btn.onclick = () => playWord(i, btn);
-            grid.appendChild(btn);
-        }
-    }
-
-    function shuffleVocab() {
-        for (let i = currentOrder.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [currentOrder[i], currentOrder[j]] = [currentOrder[j], currentOrder[i]];
-        }
-        alert("次序已隨機重置！現在按鈕 1-12 對應的詞語已打亂。");
-    }
-
-    function playWord(btnIndex, btnElement) {
-        const wordIndex = currentOrder[btnIndex];
-        const word = vocabList[wordIndex];
-        
-        // Visual feedback - can be clicked multiple times
-        btnElement.classList.add('playing');
-        setTimeout(() => btnElement.classList.remove('playing'), 800);
-
-        // Speak with slower speed and British English
-        const utterance = new SpeechSynthesisUtterance(word);
-        utterance.lang = 'en-GB'; // British English
-        utterance.rate = 0.6; // Slower speed for Part B
-        window.speechSynthesis.speak(utterance);
-    }
-
-    // --- Part A Logic ---
-    function checkPartA() {
-        let correctCount = 0;
-        const inputs = document.querySelectorAll('#partA input');
-        let feedback = "";
-        
-        inputs.forEach(input => {
-            const userAns = input.value.trim().toLowerCase();
-            const correctAns = input.getAttribute('data-ans').toLowerCase();
-            
-            if (userAns === correctAns) {
-                input.style.borderColor = "#2ecc71";
-                input.style.backgroundColor = "#e8f5e9";
-                correctCount++;
-            } else {
-                input.style.borderColor = "#e74c3c";
-                input.style.backgroundColor = "#fce4ec";
-            }
-        });
-
-        const feedbackDiv = document.getElementById('partAFeedback');
-        feedbackDiv.innerHTML = `你答對了 ${correctCount} / 10 題。`;
-        feedbackDiv.style.color = correctCount === 10 ? "green" : "red";
-    }
-
-    // --- Part C Logic ---
-    // Break passages into 3-word chunks with punctuation
-    const passageChunks = [
-        // Paragraph 1
-        { section: "Paragraph 1", chunks: [
-            "Betty and Billy",
-            "were a great",
-            "help to their",
-            "uncle Eddy on",
-            "his big day."
-        ]},
-        // Paragraph 2
-        { section: "Paragraph 2", chunks: [
-            "It was almost",
-            "time for groom",
-            "Eddy to give",
-            "the bride Nicole",
-            "the wedding ring.",
-            "He asked his",
-            "brother Henry for",
-            "the ring. Henry",
-            "was the best",
-            "man. He helped",
-            "Eddy at the",
-            "wedding. Henry",
-            "searched in his",
-            "pockets, but he",
-            "could not find",
-            "it."
-        ]},
-        // Paragraph 3
-        { section: "Paragraph 3", chunks: [
-            "On Chinese New",
-            "Year's Eve, I",
-            "visited the flower",
-            "market. It was",
-            "a mandarin tree.",
-            "Look at the",
-            "photo. The mandarin",
-            "tree isn't real,",
-            "but I love",
-            "it. It looks",
-            "very cute."
-        ]}
-    ];
-
-    let currentRate = 0.6; // Default slower speed
-
-    function setSpeed(val) {
-        currentRate = parseFloat(val);
-    }
-
-    function togglePassage() {
-        const passageDiv = document.getElementById('passageText');
-        const btn = document.querySelector('.toggle-passage-btn');
-        
-        if (passageDiv.classList.contains('hidden')) {
-            passageDiv.classList.remove('hidden');
-            btn.innerHTML = '🙈 隱藏文章';
-            btn.style.backgroundColor = '#9b59b6';
-        } else {
-            passageDiv.classList.add('hidden');
-            btn.innerHTML = '👁️ 顯示文章';
-            btn.style.backgroundColor = '#e74c3c';
-        }
-    }
-
-    function initChunkButtons() {
-        const container = document.getElementById('chunkButtons');
-        container.innerHTML = '';
-        
-        passageChunks.forEach((para, paraIndex) => {
-            // Add section title
-            const sectionTitle = document.createElement('div');
-            sectionTitle.className = 'section-title';
-            sectionTitle.textContent = para.section;
-            container.appendChild(sectionTitle);
-            
-            // Add chunk buttons
-            const chunksDiv = document.createElement('div');
-            chunksDiv.className = 'word-chunks';
-            
-            para.chunks.forEach((chunk, chunkIndex) => {
-                const btn = document.createElement('button');
-                btn.className = 'chunk-btn';
-                btn.id = `chunkBtn-${paraIndex}-${chunkIndex}`;
-                btn.textContent = chunk;
-                btn.onclick = () => playChunk(chunk, btn);
-                chunksDiv.appendChild(btn);
-            });
-            
-            container.appendChild(chunksDiv);
-        });
-    }
-
-    function playChunk(text, btnElement) {
-        // Visual feedback - can be clicked multiple times
-        btnElement.classList.add('active');
-        setTimeout(() => btnElement.classList.remove('active'), 500);
-
-        // Speak with British English and selected speed
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'en-GB'; // British English
-        utterance.rate = currentRate;
-        window.speechSynthesis.speak(utterance);
-    }
-
-    // --- Part D (Grading) Logic ---
-    function handleFileUpload(input) {
-        if (input.files && input.files[0]) {
-            const loader = document.getElementById('loader');
-            const resultBox = document.getElementById('resultBox');
-            
-            loader.style.display = 'block';
-            resultBox.style.display = 'none';
-
-            // Simulate AI Processing time
-            setTimeout(() => {
-                loader.style.display = 'none';
-                calculateAndShowScore();
-            }, 2500);
-        }
-    }
-
-    function calculateAndShowScore() {
-        // Part A: Check inputs from Part A section
-        let partAScore = 0;
-        const inputs = document.querySelectorAll('#partA input');
-        let hasUserInput = false;
-        
-        inputs.forEach(input => {
-            if (input.value.trim() !== "") {
-                hasUserInput = true;
-                if (input.value.trim().toLowerCase() === input.getAttribute('data-ans').toLowerCase()) {
-                    partAScore += 1;
-                }
-            }
-        });
-        
-        // If no input, generate random score for demo
-        if (!hasUserInput) {
-            partAScore = Math.floor(Math.random() * 4) + 6; // 6-9 for demo
-        }
-
-        // Part B: Mock score (Max 36)
-        const partBErrors = Math.floor(Math.random() * 3); // 0, 1, or 2 errors
-        const partBScore = 36 - (partBErrors * 3);
-
-        // Part C: Mock score (Max 60, -3 per error)
-        const partCErrors = Math.floor(Math.random() * 5) + 2; // 2 to 6 errors
-        const partCScore = Math.max(0, 60 - (partCErrors * 3));
-
-        const totalScore = partAScore + partBScore + partCScore;
-
-        // Display Results
-        document.getElementById('scoreA').innerText = `${partAScore} / 10`;
-        document.getElementById('scoreB').innerText = `${partBScore} / 36`;
-        document.getElementById('scoreC').innerText = `${partCScore} / 60`;
-        document.getElementById('totalScore').innerText = totalScore;
-
-        // Generate Suggestions
-        let suggestions = [];
-        if (partAScore < 10) suggestions.push("• Part A: 請複習 irregular verbs (如 ride→ridden, eat→eaten, take→taken)");
-        if (partBScore < 36) suggestions.push("• Part B: 注意拼寫，特別是 'reunion dinner' 和 'turnip cakes' 兩個詞組");
-        if (partCScore < 60) suggestions.push("• Part C: 注意標點符號、大寫字母 (如 Chinese New Year's Eve) 和單複數");
-        if (totalScore < 60) suggestions.push("• 建議多聽錄音跟讀，並加強基本詞彙拼寫練習");
-        if (suggestions.length === 0) suggestions.push("• 做得很好！保持這個水準！繼續努力！");
-
-        document.getElementById('suggestionText').innerHTML = "<strong>改善建議：</strong><br><br>" + suggestions.join("<br>");
-
-        document.getElementById('resultBox').style.display = 'block';
-        document.getElementById('resultBox').scrollIntoView({behavior: "smooth"});
-    }
-
-    function resetGrading() {
-        document.getElementById('resultBox').style.display = 'none';
-        document.getElementById('fileInput').value = "";
-    }
-
-    // Initialize
-    window.onload = function() {
-        initVocab();
-        initChunkButtons();
+    const answers = {
+        v1: "asked", v2: "looked", v3: "shouted", v4: "tidied", v5: "studied",
+        v6: "eaten", v7: "ridden", v8: "taken", v9: "got", v10: "sat"
     };
 
+    // 畫布初始化
+    const canvas = document.getElementById('writeCanvas');
+    const ctx = canvas.getContext('2d');
+    let drawing = false;
+
+    function drawGrid() {
+        ctx.strokeStyle = "#bdc3c7";
+        ctx.lineWidth = 1;
+        // 畫 4x6 表格線 (模擬原圖結構)
+        for(let i=0; i<=4; i++) { // 直線
+            ctx.moveTo(i * 210, 0); ctx.lineTo(i * 210, 400);
+        }
+        for(let j=0; j<=6; j++) { // 橫線
+            ctx.moveTo(0, j * 66); ctx.lineTo(840, j * 66);
+        }
+        ctx.stroke();
+        
+        // 填充文字
+        ctx.font = "16px Arial";
+        ctx.fillStyle = "#7f8c8d";
+        const prompts = ["1. ask", "2. look", "3. shout", "4. tidy", "5. study", "6. eat", "7. ride", "8. take", "9. get", "10. sit"];
+        prompts.forEach((p, idx) => {
+            let col = idx < 5 ? 0 : 2;
+            let row = (idx % 5) + 1;
+            ctx.fillText(p, col * 210 + 10, row * 66 + 40);
+        });
+    }
+    drawGrid();
+
+    // 畫筆邏輯
+    canvas.addEventListener('mousedown', () => drawing = true);
+    canvas.addEventListener('mouseup', () => drawing = false);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); drawing = true; });
+    canvas.addEventListener('touchend', () => drawing = false);
+    canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e.touches[0]); });
+
+    function draw(e) {
+        if (!drawing) return;
+        const rect = canvas.getBoundingClientRect();
+        const x = (e.clientX || e.pageX) - rect.left;
+        const y = (e.clientY || e.pageY) - rect.top;
+        ctx.fillStyle = "#000";
+        ctx.beginPath();
+        ctx.arc(x, y, 2, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    function clearCanvas() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawGrid();
+    }
+
+    // 模擬 AI 批改邏輯
+    function analyzeCanvas() {
+        alert("AI 正在分析您的手寫軌跡...\n(此為演示功能，模擬批改結果)");
+        showResult("畫布默書");
+    }
+
+    // 拍照上傳模擬
+    document.getElementById('photoInput').addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+            const photoResult = document.getElementById('photo-result');
+            photoResult.style.display = "block";
+            photoResult.innerHTML = "⏳ 正在辨識照片中，請稍候...";
+            
+            setTimeout(() => {
+                photoResult.style.innerHTML = "";
+                let score = 8;
+                photoResult.innerHTML = `
+                    <div style="border: 2px dashed #8e44ad; padding: 15px;">
+                        <h4>📸 拍照批改結果</h4>
+                        <p><strong>得分：${score}/10</strong></p>
+                        <ul>
+                            <li><span class="correct">asked, looked, eaten, ridden...</span> ✅ 正確</li>
+                            <li><span class="wrong">tidyed</span> ❌ 錯誤：應為 <b>tidied</b> <span class="suggestion">(記得去 y 加 ied)</span></li>
+                            <li><span class="wrong">eated</span> ❌ 錯誤：應為 <b>eaten</b> <span class="suggestion">(這是 irregular verb)</span></li>
+                        </ul>
+                        <p><strong>💡 改善建議：</strong> 你對規則動詞掌握得很好，但需要多複習不規則動詞 (Irregular Verbs) 的變化表。加油！</p>
+                    </div>
+                `;
+            }, 2000);
+        }
+    });
+
+    function showResult(type) {
+        const resDiv = document.getElementById('result');
+        resDiv.style.display = "block";
+        resDiv.innerHTML = `<h4>✅ ${type} 批改完成</h4><p>得分：進行比對中... (請使用上方輸入框進行精確比對)</p>`;
+    }
 </script>
 
 </body>
