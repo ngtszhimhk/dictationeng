@@ -126,18 +126,25 @@
             z-index: 2; 
             background-color: transparent;
             cursor: crosshair;
-            /* touch-action: none 非常重要，防止用筆畫圖時網頁跟著滑動 */
+            /* 防止畫圖時網頁跟著滑動 */
             touch-action: none; 
         }
         
-        /* 文具列 Styles */
+        /* 底部工具與按鈕列整合 */
+        .action-group {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
         .toolbar {
-            text-align: center;
-            margin-bottom: 10px;
             background: #eee;
-            padding: 10px;
+            padding: 6px;
             border-radius: 10px;
-            display: inline-block;
+            display: flex;
+            gap: 5px;
         }
         .tool-btn {
             background-color: white;
@@ -145,6 +152,7 @@
             border: 2px solid #ccc;
             padding: 8px 15px;
             border-radius: 20px;
+            margin: 0; /* 覆蓋全域 button margin */
         }
         .tool-btn.active {
             background-color: #ffeaa7;
@@ -193,24 +201,22 @@
     </div>
 
     <div class="container" id="part2">
-        <h2>Part A: Apple Pencil 單行簿畫布版</h2>
-        <p>在下方選擇文具，並在空白處寫出對應的字母吧！</p>
-        
-        <div style="text-align: center;">
-            <div class="toolbar">
-                <button class="tool-btn active" id="tool-blue" onclick="setTool('blue')">🖊️ 藍筆</button>
-                <button class="tool-btn" id="tool-eraser" onclick="setTool('eraser')">🧽 膠擦</button>
-            </div>
-        </div>
+        <h2>Part A: 請在IPad用手指默在下面的單行內，需要時自己放大單行畫面默寫</h2>
 
         <div class="canvas-wrapper">
             <canvas id="textCanvas" class="canvas-layer" width="700" height="440"></canvas>
             <canvas id="dictationCanvas" class="canvas-layer" width="700" height="440"></canvas>
         </div>
-        <div style="text-align: center;">
-            <button class="btn-reset" onclick="clearDrawCanvas()">🔄 重默</button>
-            <button class="btn-check" id="btnCanvasOCR" onclick="checkCanvasOCR()">🤖 畫布真實AI批改</button>
+        
+        <div class="action-group">
+            <div class="toolbar">
+                <button class="tool-btn active" id="tool-blue" onclick="setTool('blue')">🖊️ 藍筆</button>
+                <button class="tool-btn" id="tool-eraser" onclick="setTool('eraser')">🧽 膠擦</button>
+            </div>
+            <button class="btn-reset" onclick="clearDrawCanvas()">🔄 清屏重默</button>
+            <button class="btn-check" id="btnCanvasOCR" onclick="checkCanvasOCR()">🤖 AI批改</button>
         </div>
+
         <div class="mock-result" id="canvasResult"></div>
     </div>
 
@@ -315,11 +321,8 @@
             }
         }
 
-        // --- 升級版：Apple Pencil 防懸空誤觸防護 (Pointer Events) ---
+        // --- 優化為適合手指觸控的繪圖邏輯 ---
         function startPosition(e) { 
-            // 如果是觸控筆，且壓力值為 0 (代表懸空)，就直接忽略不畫
-            if (e.pointerType === 'pen' && e.pressure === 0) return;
-            
             isDrawing = true; 
             draw(e); 
         }
@@ -331,18 +334,16 @@
         
         function draw(e) {
             if (!isDrawing) return;
-            // 再次防護：防止畫到一半筆尖微微抬起造成的亂飄
-            if (e.pointerType === 'pen' && e.pressure === 0) return;
 
             e.preventDefault();
             const rect = canvas.getBoundingClientRect();
             
-            // Pointer Events 已經整合了滑鼠與觸控座標
+            // Pointer Events 支援手指與滑鼠，十分穩定
             const x = (e.clientX - rect.left) * (canvas.width / rect.width);
             const y = (e.clientY - rect.top) * (canvas.height / rect.height);
 
             ctx.lineCap = 'round';
-            ctx.lineJoin = 'round'; // 讓筆劃轉彎處更平滑
+            ctx.lineJoin = 'round'; 
             
             if (currentTool === 'eraser') {
                 ctx.globalCompositeOperation = 'destination-out';
@@ -350,12 +351,8 @@
                 ctx.strokeStyle = 'rgba(0,0,0,1)'; 
             } else {
                 ctx.globalCompositeOperation = 'source-over';
-                // 根據 Apple Pencil 下筆的壓力稍微調整筆畫粗細
-                let dynamicWidth = 5;
-                if (e.pointerType === 'pen' && e.pressure > 0) {
-                    dynamicWidth = 3 + (e.pressure * 4); // 壓力大會稍微變粗
-                }
-                ctx.lineWidth = dynamicWidth;
+                // 筆畫變幼，設定為固定粗度 3，不再因為壓力而變粗
+                ctx.lineWidth = 3;
                 ctx.strokeStyle = '#2980b9'; 
             }
             ctx.lineTo(x, y); 
@@ -370,44 +367,40 @@
             setTool('blue'); initCanvasText(false); 
         }
 
-        // 核心 AI 分析與批改引擎 (包含斷字縫合與紅框繪製)
+        // 核心 AI 分析與批改引擎
         function processAndScoreOCR(recognizedWordsArray, container, targetCtx) {
             let score = 0;
             let foundWords = [];
             let caseErrors = [];
             let missedWords = [];
             
-            // 1. 清理並標記所有辨識到的單字 (修正常見 AI 視覺誤差)
             let processedWords = recognizedWordsArray.map(w => {
                 let clean = w.text.trim();
-                // 把常見的錯誤看錯的字換回來，避免冤枉學生
                 clean = clean.replace(/1/g, 'l').replace(/0/g, 'o').replace(/5/g, 's');
-                // 移除標點符號，但保留大小寫
                 clean = clean.replace(/[^a-zA-Z]/g, ''); 
                 
                 let isIgnored = ignoreWordsList.includes(clean.toLowerCase());
                 return {
                     originalBbox: w.bbox,
                     cleanText: clean,
-                    used: isIgnored, // 如果是題目字，直接標記為已使用，不再處理
+                    used: isIgnored, 
                     isIgnored: isIgnored
                 };
             });
 
-            // 2. 評分邏輯
             wordList.forEach(wordObj => {
                 const target = wordObj.perfect;
                 let matched = false;
 
-                // 步驟 A: 先找「單獨完整寫對」的字
+                // A: 單獨完整對
                 for (let i = 0; i < processedWords.length; i++) {
                     if (processedWords[i].used || processedWords[i].cleanText.length === 0) continue;
                     
                     let text = processedWords[i].cleanText;
-                    if (text === target) { // 完全正確
+                    if (text === target) { 
                         score++; foundWords.push(target);
                         processedWords[i].used = true; matched = true; break;
-                    } else if (text.toLowerCase() === target.toLowerCase()) { // 大小寫錯誤
+                    } else if (text.toLowerCase() === target.toLowerCase()) { 
                         caseErrors.push(`<b>${text}</b> (應為 <b>${target}</b>)`);
                         processedWords[i].used = true; matched = true; break;
                     }
@@ -415,11 +408,10 @@
 
                 if (matched) return;
 
-                // 步驟 B: 「斷字縫合技術」- 如果學生寫太開(ea ten)，把它們連起來看！
+                // B: 斷字縫合
                 for (let i = 0; i < processedWords.length - 1; i++) {
                     if (processedWords[i].used) continue;
                     
-                    // 嘗試組合相鄰的 2 個或 3 個字 (例如 t a ken)
                     let w1 = processedWords[i].cleanText;
                     let w2 = processedWords[i+1] ? processedWords[i+1].cleanText : "";
                     let w3 = processedWords[i+2] ? processedWords[i+2].cleanText : "";
@@ -443,14 +435,12 @@
                 if (!matched) missedWords.push(target);
             });
 
-            // 3. 繪製紅框 (只框出那些「沒被判定正確/大小寫」且「不是題目」的錯字)
             targetCtx.save();
             targetCtx.strokeStyle = '#e74c3c'; 
             targetCtx.lineWidth = 3;
             targetCtx.fillStyle = 'rgba(231, 76, 60, 0.15)';
 
             processedWords.forEach(w => {
-                // 如果這個字沒被用來得分，也不是題目，且有一定長度(避免把小污點畫框)
                 if (!w.used && !w.isIgnored && w.cleanText.length >= 1) {
                     targetCtx.strokeRect(w.originalBbox.x0 - 2, w.originalBbox.y0 - 2, (w.originalBbox.x1 - w.originalBbox.x0) + 4, (w.originalBbox.y1 - w.originalBbox.y0) + 4);
                     targetCtx.fillRect(w.originalBbox.x0 - 2, w.originalBbox.y0 - 2, (w.originalBbox.x1 - w.originalBbox.x0) + 4, (w.originalBbox.y1 - w.originalBbox.y0) + 4);
@@ -458,7 +448,6 @@
             });
             targetCtx.restore();
 
-            // 4. 顯示文字報告
             let feedbackHTML = `<h3>📝 AI 批改結果：</h3><p style="font-size: 1.2em;"><strong>🌟 得分： ${score} / 10</strong></p>`;
             if (foundWords.length > 0) feedbackHTML += `<p style="color: #27ae60;">✅ <b>完全正確：</b><br>${foundWords.join(', ')}</p>`;
             if (caseErrors.length > 0) feedbackHTML += `<p style="color: #d35400;">⚠️ <b>大小寫錯誤 (不給分)：</b><br>${caseErrors.join('<br>')}</p>`;
@@ -490,12 +479,12 @@
             } finally { btn.disabled = false; }
         }
 
-        // 使用現代化化的 Pointer Events 監聽器
+        // 綁定指標事件，支援手指觸控
         canvas.addEventListener('pointerdown', startPosition);
         canvas.addEventListener('pointerup', endPosition);
         canvas.addEventListener('pointermove', draw);
-        canvas.addEventListener('pointerout', endPosition);    // 筆尖離開範圍自動斷開
-        canvas.addEventListener('pointercancel', endPosition); // 系統打斷時自動斷開
+        canvas.addEventListener('pointerout', endPosition);
+        canvas.addEventListener('pointercancel', endPosition);
 
         window.onload = () => { initTable(); initCanvasText(false); };
     </script>
