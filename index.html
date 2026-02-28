@@ -150,7 +150,6 @@
     <div id="feedback-section"></div>
 
     <script>
-        // 題目資料 (注意：圖片中第8題為take，下方原圖錯標為8. get，這裡修正為9. get)
         const verbsData = [
             { tense: "1. ask", perfect: "asked" },
             { tense: "6. eat", perfect: "eaten" },
@@ -174,13 +173,11 @@
             for (let i = 0; i < 5; i++) {
                 const tr = document.createElement("tr");
                 
-                // 左半部 (1-5)
                 const leftItem = verbsData[i * 2];
                 tr.appendChild(createCell(leftItem.tense));
                 tr.appendChild(createCanvasCell(i * 2));
                 tr.appendChild(createAnswerCell(leftItem.perfect, i * 2));
 
-                // 右半部 (6-10)
                 const rightItem = verbsData[i * 2 + 1];
                 tr.appendChild(createCell(rightItem.tense));
                 tr.appendChild(createCanvasCell(i * 2 + 1));
@@ -221,8 +218,9 @@
             for (let i = 0; i < 10; i++) {
                 const canvas = document.getElementById(`canvas${i}`);
                 const ctx = canvas.getContext("2d", { willReadFrequently: true });
-                // 設定預設為藍筆，筆劃較幼
-                ctx.lineWidth = 2.5; 
+                
+                // --- 已在此處將筆劃改幼為 1.0 ---
+                ctx.lineWidth = 1.0; 
                 ctx.lineCap = "round";
                 ctx.lineJoin = "round";
                 ctx.strokeStyle = "#0000ff";
@@ -251,16 +249,17 @@
 
                 function draw(e) {
                     if (!isDrawing) return;
-                    e.preventDefault(); // 防止手機滑動
+                    e.preventDefault(); 
                     const pos = getPos(e);
                     
                     if (currentTool === 'eraser') {
                         ctx.globalCompositeOperation = "destination-out";
-                        ctx.lineWidth = 15; // 膠擦大一點
+                        ctx.lineWidth = 15; // 膠擦維持較大，方便擦拭
                     } else {
                         ctx.globalCompositeOperation = "source-over";
                         ctx.strokeStyle = "#0000ff";
-                        ctx.lineWidth = 2.5;
+                        // --- 已在此處將畫筆筆劃改幼為 1.0 ---
+                        ctx.lineWidth = 1.0; 
                     }
 
                     ctx.lineTo(pos.x, pos.y);
@@ -272,13 +271,11 @@
                     isDrawing = false;
                 }
 
-                // 滑鼠事件
                 canvas.addEventListener('mousedown', startDrawing);
                 canvas.addEventListener('mousemove', draw);
                 canvas.addEventListener('mouseup', stopDrawing);
                 canvas.addEventListener('mouseout', stopDrawing);
 
-                // 觸控事件 (平板/手機)
                 canvas.addEventListener('touchstart', startDrawing);
                 canvas.addEventListener('touchmove', draw, {passive: false});
                 canvas.addEventListener('touchend', stopDrawing);
@@ -303,7 +300,6 @@
                 contexts.forEach(ctx => {
                     ctx.clearRect(0, 0, 160, 50);
                 });
-                // 隱藏答案與分數
                 document.querySelectorAll('.correct-ans-col').forEach(col => col.style.display = 'none');
                 for(let i=0; i<10; i++) {
                     document.getElementById(`mark${i}`).innerHTML = '';
@@ -318,33 +314,27 @@
             loading.style.display = 'block';
             document.getElementById('feedback-section').style.display = 'none';
             
-            // 顯示正確答案欄位
             document.querySelectorAll('.correct-ans-col').forEach(col => {
                 col.style.display = 'table-cell';
             });
 
             let score = 0;
-            // 載入 Tesseract Worker (英文辨識)
             const worker = await Tesseract.createWorker('eng');
             
             for (let i = 0; i < 10; i++) {
                 const canvas = canvases[i];
                 const expectedAnswer = verbsData[i].perfect;
                 
-                // 檢查畫布是否空白 (簡單判斷)
                 const blank = isCanvasBlank(canvas);
                 let recognizedText = "";
 
                 if (!blank) {
-                    // 使用 AI 辨識畫布上的圖像
                     const { data: { text } } = await worker.recognize(canvas);
-                    // 移除多餘空白與標點，保留大小寫字母
                     recognizedText = text.trim().replace(/[^a-zA-Z]/g, ''); 
                 }
 
                 const markIcon = document.getElementById(`mark${i}`);
                 
-                // 嚴格對比：完全相等（包括大小寫）才給分
                 if (!blank && recognizedText === expectedAnswer) {
                     score++;
                     markIcon.innerHTML = '✔';
@@ -352,7 +342,6 @@
                 } else {
                     markIcon.innerHTML = '✘';
                     markIcon.className = 'mark-icon cross';
-                    // 開發者可於 Console 觀看 AI 辨識出的文字與正確答案的差距
                     console.log(`題號 ${verbsData[i].tense}: 預期[${expectedAnswer}], AI辨識為[${recognizedText}]`);
                 }
             }
@@ -360,7 +349,6 @@
             await worker.terminate();
             loading.style.display = 'none';
 
-            // 顯示分數與評語
             const feedback = document.getElementById('feedback-section');
             feedback.style.display = 'block';
             
@@ -386,7 +374,6 @@
             feedback.innerHTML = `本次得分：${score} / 10 分<br><br>${comment}`;
         });
 
-        // 輔助功能：判斷畫布是否全白 (避免把空白格拿去 AI 辨識浪費時間)
         function isCanvasBlank(canvas) {
             const blank = document.createElement('canvas');
             blank.width = canvas.width;
@@ -394,7 +381,6 @@
             return canvas.toDataURL() === blank.toDataURL();
         }
 
-        // 網頁載入後生成表格
         window.onload = buildTable;
 
     </script>
