@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>英文默書練習 - 編程設計：伍子謙老師</title>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -25,6 +26,13 @@
         .header h1 { margin: 0; font-size: 1.8em; }
         .header h2 { margin: 10px 0 0 0; font-size: 1.2em; font-weight: normal; }
         
+        /* 為了截圖排版整齊，把主要內容包裝起來 */
+        #capture-area {
+            background-color: #f4f7f6;
+            padding: 10px;
+            border-radius: 10px;
+        }
+
         /* 表格基本設定 */
         table {
             width: 100%;
@@ -74,7 +82,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            touch-action: none; /* 防止觸控時螢幕滾動 */
+            touch-action: none;
             cursor: crosshair;
         }
         
@@ -126,7 +134,7 @@
         }
         .controls button {
             font-size: 1.2em;
-            padding: 12px 30px;
+            padding: 12px 25px;
             border: none;
             border-radius: 8px;
             cursor: pointer;
@@ -137,8 +145,14 @@
         #btn-grade { background-color: #2196F3; color: white; }
         #btn-grade:hover { background-color: #1976D2; }
         #btn-grade:disabled { background-color: #90CAF9; cursor: not-allowed; }
+        
         #btn-clear { background-color: #ff9800; color: white; }
         #btn-clear:hover { background-color: #f57c00; }
+
+        /* 截圖按鈕專屬樣式 */
+        #btn-screenshot { background-color: #9C27B0; color: white; width: 100%; max-width: 400px; }
+        #btn-screenshot:hover { background-color: #7B1FA2; }
+        #btn-screenshot:disabled { background-color: #CE93D8; cursor: not-allowed; }
         
         /* 回饋區塊 */
         #feedback-section {
@@ -146,7 +160,7 @@
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            margin-bottom: 40px;
+            margin-top: 20px;
             display: none;
         }
         .score-display {
@@ -164,23 +178,17 @@
             line-height: 1.6;
         }
 
-        /* =========================================
-           響應式設計 (Responsive Media Queries) 
-           針對平板與手機螢幕 (小於 900px)
-           ========================================= */
+        /* 響應式設計 */
         @media screen and (max-width: 900px) {
             .header h1 { font-size: 1.5em; }
             .header h2 { font-size: 1.1em; }
             
-            /* 將表格轉換成卡片式排列 */
             table, thead, tbody, th, td, tr {
                 display: block;
                 width: 100%;
                 box-sizing: border-box;
             }
-            thead {
-                display: none; /* 隱藏表格標題列 */
-            }
+            thead { display: none; }
             tr {
                 margin-bottom: 20px;
                 border: 2px solid #4CAF50;
@@ -195,8 +203,7 @@
                 padding: 10px 0;
                 text-align: center;
             }
-            /* 卡片內的排版微調 */
-            td:nth-child(1) { /* No. */
+            td:nth-child(1) { 
                 display: inline-block;
                 background: #4CAF50;
                 color: white;
@@ -205,17 +212,13 @@
                 font-weight: bold;
                 margin-bottom: 10px;
             }
-            td:nth-child(2) { /* Present tense */
+            td:nth-child(2) { 
                 display: block;
                 font-size: 1.5em;
                 margin-bottom: 10px;
             }
-            .tools-container {
-                flex-direction: row; /* 工具按鈕在手機上橫向排列 */
-            }
-            .canvas-wrapper {
-                display: block;
-            }
+            .tools-container { flex-direction: row; }
+            .canvas-wrapper { display: block; }
             .result-icon {
                 display: block;
                 margin-top: 10px;
@@ -227,58 +230,58 @@
                 border-radius: 5px;
                 margin-top: 10px;
             }
-            .correct-answer-col:empty {
-                display: none; /* 未批改前隱藏答案框 */
-            }
+            .correct-answer-col:empty { display: none; }
             .controls button {
-                width: 100%; /* 手機上按鈕佔滿寬度 */
+                width: 100%; 
                 max-width: 300px;
             }
+            #btn-screenshot { max-width: 100%; } /* 手機版截圖按鈕拉寬，方便點擊 */
         }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h1>編程設計：伍子謙老師</h1>
-        <h2>Part A: Verb table (regular / irregular verbs) (10%)</h2>
-    </div>
-
-    <table>
-        <thead>
-            <tr>
-                <th>No.</th>
-                <th>Present tense</th>
-                <th>工具</th>
-                <th>Present Perfect (has/have) - 請在格內默寫</th>
-                <th>正確答案對照</th>
-            </tr>
-        </thead>
-        <tbody id="exercise-body">
-            </tbody>
-    </table>
-
-    <div class="controls">
-        <button id="btn-grade">🤖 AI自動批改</button>
-        <button id="btn-clear">🔄 清屏重默</button>
-    </div>
-
-    <div id="feedback-section">
-        <div class="score-display">總分：<span id="score-text">0</span> / 10</div>
-        
-        <div class="grammar-tips">
-            <h3>💡 老師小提醒：Present tense vs Present Perfect</h3>
-            <p><strong>Present tense (現在式)</strong> 用來表達日常習慣或事實。例如："I <strong>study</strong> every day."</p>
-            <p><strong>Present Perfect (現在完成式)</strong> 結構是 <em>has/have + 過去分詞 (Past Participle)</em>，用來表達過去發生且對現在有影響的動作，或一直持續到現在的經驗。例如："I have <strong>studied</strong>."</p>
-            <p><strong>動詞變化規律：</strong></p>
-            <ul>
-                <li>一般規則：直接加 <strong>-ed</strong> (例如：ask → asked)</li>
-                <li>字尾是子音+y：去掉 y 加 <strong>-ied</strong> (例如：study → studied)</li>
-                <li>不規則變化：必須背誦 (例如：eat → eaten)</li>
-            </ul>
+    <div id="capture-area">
+        <div class="header">
+            <h1>編程設計：伍子謙老師</h1>
+            <h2>Part A: Verb table (regular / irregular verbs) (10%)</h2>
         </div>
 
-        <div id="detailed-feedback"></div>
+        <table>
+            <thead>
+                <tr>
+                    <th>No.</th>
+                    <th>Present tense</th>
+                    <th>工具</th>
+                    <th>Present Perfect (has/have) - 請在格內默寫</th>
+                    <th>正確答案對照</th>
+                </tr>
+            </thead>
+            <tbody id="exercise-body">
+                </tbody>
+        </table>
+
+        <div id="feedback-section">
+            <div class="score-display">總分：<span id="score-text">0</span> / 10</div>
+            
+            <div class="grammar-tips">
+                <h3>💡 老師小提醒：Present tense vs Present Perfect</h3>
+                <p><strong>Present tense (現在式)</strong> 用來表達日常習慣或事實。例如："I <strong>study</strong> every day."</p>
+                <p><strong>Present Perfect (現在完成式)</strong> 結構是 <em>has/have + 過去分詞 (Past Participle)</em>，用來表達過去發生且對現在有影響的動作，或一直持續到現在的經驗。例如："I have <strong>studied</strong>."</p>
+                <p><strong>動詞變化規律：</strong></p>
+                <ul>
+                    <li>一般規則：直接加 <strong>-ed</strong> (例如：ask → asked)</li>
+                    <li>字尾是子音+y：去掉 y 加 <strong>-ied</strong> (例如：study → studied)</li>
+                    <li>不規則變化：必須背誦 (例如：eat → eaten)</li>
+                </ul>
+            </div>
+
+            <div id="detailed-feedback"></div>
+        </div>
+    </div> <div class="controls">
+        <button id="btn-grade">🤖 AI自動批改</button>
+        <button id="btn-clear">🔄 清屏重默</button>
+        <button id="btn-screenshot">📸 成績表截圖下載到相片簿再上傳padlet</button>
     </div>
 
     <script>
@@ -465,8 +468,8 @@
             btn.disabled = false;
             btn.innerText = "🤖 AI自動批改";
             
-            // 批改完成後自動向下捲動到分數區
-            document.getElementById('feedback-section').scrollIntoView({ behavior: 'smooth' });
+            // 批改完成後自動向下捲動
+            document.getElementById('btn-screenshot').scrollIntoView({ behavior: 'smooth' });
         });
 
         document.getElementById('btn-clear').addEventListener('click', () => {
@@ -489,6 +492,51 @@
                 document.getElementById('feedback-section').style.display = 'none';
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
+        });
+
+        // 截圖下載功能
+        document.getElementById('btn-screenshot').addEventListener('click', () => {
+            const btn = document.getElementById('btn-screenshot');
+            const originalText = btn.innerText;
+            
+            // 按下時改變按鈕狀態，避免重複點擊
+            btn.innerText = "⏳ 正在產生截圖，請稍候...";
+            btn.disabled = true;
+
+            // 鎖定我們要截圖的範圍 (id="capture-area")
+            const captureArea = document.getElementById('capture-area');
+
+            html2canvas(captureArea, {
+                scale: 2, // 提高解析度，讓截出來的圖片更清晰
+                backgroundColor: "#f4f7f6", // 確保背景色一致
+                useCORS: true // 確保外部字體或資源能正確載入
+            }).then(canvas => {
+                // 將 canvas 轉換為圖片數據
+                const imgData = canvas.toDataURL('image/png');
+                
+                // 建立一個虛擬的超連結來觸發下載
+                const link = document.createElement('a');
+                link.download = '英文默書成績表.png'; // 下載的預設檔名
+                link.href = imgData;
+                
+                // 模擬點擊下載
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                // 恢復按鈕狀態
+                btn.innerText = "✅ 截圖已下載！現在可以上傳 Padlet 了";
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                }, 3000); // 3秒後恢復原狀
+                
+            }).catch(error => {
+                console.error("截圖失敗:", error);
+                alert("截圖時發生錯誤，請重試！");
+                btn.innerText = originalText;
+                btn.disabled = false;
+            });
         });
     </script>
 </body>
