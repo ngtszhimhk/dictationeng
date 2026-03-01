@@ -26,26 +26,14 @@
         .header h1 { margin: 0; font-size: 1.8em; }
         .header h2 { margin: 10px 0 0 0; font-size: 1.2em; font-weight: normal; }
         
-        .part-header {
-            background-color: #2E7D32;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 8px;
-            margin: 30px 0 15px 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .part-header h3 { margin: 0; font-size: 1.4em; }
-
+        /* 為了截圖排版整齊，把主要內容包裝起來 */
         #capture-area {
             background-color: #f4f7f6;
             padding: 10px;
             border-radius: 10px;
         }
 
+        /* 表格基本設定 */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -53,7 +41,6 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             border-radius: 8px;
             overflow: hidden;
-            margin-bottom: 20px;
         }
         th, td {
             border: 1px solid #ddd;
@@ -61,24 +48,17 @@
             text-align: center;
             vertical-align: middle;
         }
-        th { background-color: #f2f2f2; font-size: 1.1em; }
-        
+        th {
+            background-color: #f2f2f2;
+            font-size: 1.1em;
+        }
         .word-cell {
             font-size: 1.2em;
             font-weight: bold;
             color: #333;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
         }
-        .hidden-word {
-            filter: blur(5px);
-            user-select: none;
-            transition: filter 0.3s;
-        }
-        .hidden-word.revealed { filter: blur(0); }
-
+        
+        /* 四線譜畫布設計 (內高40px) */
         .canvas-wrapper {
             position: relative;
             display: inline-block;
@@ -96,9 +76,6 @@
             position: relative;
             margin: 0 auto;
         }
-        /* 針對較長詞語的微調 */
-        .long-word-canvas { width: 340px; }
-
         canvas {
             position: absolute;
             top: 0;
@@ -109,6 +86,7 @@
             cursor: crosshair;
         }
         
+        /* 工具按鈕 */
         .tools-container {
             display: flex;
             flex-direction: column;
@@ -127,21 +105,11 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
         .icon-btn:hover { transform: scale(1.1); }
-        .active-tool { background-color: #e0f7fa; border-color: #00bcd4; }
-        
-        .action-btn {
-            background-color: #ffb300;
-            color: #333;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 0.9em;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        .active-tool {
+            background-color: #e0f7fa;
+            border-color: #00bcd4;
         }
-        .action-btn:hover { background-color: #ffa000; }
-
+        
         .result-icon {
             font-size: 2em;
             margin-left: 10px;
@@ -155,6 +123,7 @@
             min-width: 100px;
         }
         
+        /* 控制按鈕區 */
         .controls {
             text-align: center;
             margin: 30px 0;
@@ -177,13 +146,15 @@
         #btn-grade:hover { background-color: #1976D2; }
         #btn-grade:disabled { background-color: #90CAF9; cursor: not-allowed; }
         
-        #btn-clear { background-color: #f44336; color: white; }
-        #btn-clear:hover { background-color: #d32f2f; }
+        #btn-clear { background-color: #ff9800; color: white; }
+        #btn-clear:hover { background-color: #f57c00; }
 
+        /* 截圖按鈕專屬樣式 */
         #btn-screenshot { background-color: #9C27B0; color: white; width: 100%; max-width: 400px; }
         #btn-screenshot:hover { background-color: #7B1FA2; }
         #btn-screenshot:disabled { background-color: #CE93D8; cursor: not-allowed; }
         
+        /* 回饋區塊 */
         #feedback-section {
             background: white;
             padding: 20px;
@@ -192,25 +163,31 @@
             margin-top: 20px;
             display: none;
         }
-        .score-board {
-            display: flex;
-            justify-content: space-around;
-            background-color: #ffebee;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 10px;
+        .score-display {
+            font-size: 1.8em;
+            color: #d32f2f;
+            font-weight: bold;
+            text-align: center;
         }
-        .score-item { text-align: center; font-size: 1.2em; }
-        .score-item span { font-size: 1.5em; font-weight: bold; color: #d32f2f; }
-        .score-total span { font-size: 1.8em; color: #B71C1C; }
+        .grammar-tips {
+            background-color: #e3f2fd;
+            padding: 15px;
+            border-left: 5px solid #2196F3;
+            margin: 20px 0;
+            border-radius: 4px;
+            line-height: 1.6;
+        }
 
+        /* 響應式設計 */
         @media screen and (max-width: 900px) {
             .header h1 { font-size: 1.5em; }
             .header h2 { font-size: 1.1em; }
             
-            table, thead, tbody, th, td, tr { display: block; width: 100%; box-sizing: border-box; }
+            table, thead, tbody, th, td, tr {
+                display: block;
+                width: 100%;
+                box-sizing: border-box;
+            }
             thead { display: none; }
             tr {
                 margin-bottom: 20px;
@@ -221,18 +198,44 @@
                 background: #fff;
                 position: relative;
             }
-            td { border: none; padding: 10px 0; text-align: center; }
+            td {
+                border: none;
+                padding: 10px 0;
+                text-align: center;
+            }
             td:nth-child(1) { 
-                display: inline-block; background: #4CAF50; color: white;
-                padding: 5px 15px; border-radius: 20px; font-weight: bold; margin-bottom: 10px;
+                display: inline-block;
+                background: #4CAF50;
+                color: white;
+                padding: 5px 15px;
+                border-radius: 20px;
+                font-weight: bold;
+                margin-bottom: 10px;
+            }
+            td:nth-child(2) { 
+                display: block;
+                font-size: 1.5em;
+                margin-bottom: 10px;
             }
             .tools-container { flex-direction: row; }
             .canvas-wrapper { display: block; }
-            .result-icon { display: block; margin-top: 10px; margin-left: 0; }
-            .correct-answer-col { background: #ffebee; padding: 10px; border-radius: 5px; margin-top: 10px; }
+            .result-icon {
+                display: block;
+                margin-top: 10px;
+                margin-left: 0;
+            }
+            .correct-answer-col {
+                background: #ffebee;
+                padding: 10px;
+                border-radius: 5px;
+                margin-top: 10px;
+            }
             .correct-answer-col:empty { display: none; }
-            .controls button { width: 100%; max-width: 300px; }
-            #btn-screenshot { max-width: 100%; }
+            .controls button {
+                width: 100%; 
+                max-width: 300px;
+            }
+            #btn-screenshot { max-width: 100%; } /* 手機版截圖按鈕拉寬，方便點擊 */
         }
     </style>
 </head>
@@ -241,12 +244,9 @@
     <div id="capture-area">
         <div class="header">
             <h1>編程設計：伍子謙老師</h1>
+            <h2>Part A: Verb table (regular / irregular verbs) (10%)</h2>
         </div>
 
-        <div class="part-header">
-            <h3>Part A: Verb table (regular / irregular verbs) (10%)</h3>
-            <span style="font-size: 0.9em; background: rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 15px;">共10題，每題1分</span>
-        </div>
         <table>
             <thead>
                 <tr>
@@ -257,89 +257,86 @@
                     <th>正確答案對照</th>
                 </tr>
             </thead>
-            <tbody id="exercise-body-a"></tbody>
-        </table>
-
-        <div class="part-header">
-            <h3>Part B: Vocabulary (30%)</h3>
-            <div>
-                <span style="font-size: 0.9em; background: rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 15px; margin-right: 10px;">共12題，每題3分</span>
-                <button id="btn-shuffle-b" class="action-btn">🔀 次序打亂</button>
-                <button id="btn-toggle-words" class="action-btn">👁️ 顯示/隱藏詞語</button>
-            </div>
-        </div>
-        <table>
-            <thead>
-                <tr>
-                    <th>No.</th>
-                    <th>聽發音默寫</th>
-                    <th>工具</th>
-                    <th>Vocabulary - 請在格內默寫</th>
-                    <th>正確答案對照</th>
-                </tr>
-            </thead>
-            <tbody id="exercise-body-b"></tbody>
+            <tbody id="exercise-body">
+                </tbody>
         </table>
 
         <div id="feedback-section">
-            <div class="score-board">
-                <div class="score-item">Part A 分數<br><span id="score-a">0</span> / 10</div>
-                <div class="score-item">Part B 分數<br><span id="score-b">0</span> / 36</div>
-                <div class="score-item score-total">總分<br><span id="score-total">0</span> / 46</div>
+            <div class="score-display">總分：<span id="score-text">0</span> / 10</div>
+            
+            <div class="grammar-tips">
+                <h3>💡 老師小提醒：Present tense vs Present Perfect</h3>
+                <p><strong>Present tense (現在式)</strong> 用來表達日常習慣或事實。例如："I <strong>study</strong> every day."</p>
+                <p><strong>Present Perfect (現在完成式)</strong> 結構是 <em>has/have + 過去分詞 (Past Participle)</em>，用來表達過去發生且對現在有影響的動作，或一直持續到現在的經驗。例如："I have <strong>studied</strong>."</p>
+                <p><strong>動詞變化規律：</strong></p>
+                <ul>
+                    <li>一般規則：直接加 <strong>-ed</strong> (例如：ask → asked)</li>
+                    <li>字尾是子音+y：去掉 y 加 <strong>-ied</strong> (例如：study → studied)</li>
+                    <li>不規則變化：必須背誦 (例如：eat → eaten)</li>
+                </ul>
             </div>
+
             <div id="detailed-feedback"></div>
         </div>
     </div> <div class="controls">
-        <button id="btn-grade">🤖 AI自動批改全卷</button>
+        <button id="btn-grade">🤖 AI自動批改</button>
         <button id="btn-clear">🔄 清屏重默</button>
         <button id="btn-screenshot">📸 成績表截圖下載到相片簿再上傳padlet</button>
     </div>
 
     <script>
-        // 題庫資料
-        const wordsA = [
-            { id: 'A1', display: "ask", answer: "asked", rule: "規則變化：加 -ed" },
-            { id: 'A2', display: "look", answer: "looked", rule: "規則變化：加 -ed" },
-            { id: 'A3', display: "shout", answer: "shouted", rule: "規則變化：加 -ed" },
-            { id: 'A4', display: "tidy", answer: "tidied", rule: "規則變化：去y加 -ied" },
-            { id: 'A5', display: "study", answer: "studied", rule: "規則變化：去y加 -ied" },
-            { id: 'A6', display: "eat", answer: "eaten", rule: "不規則變化" },
-            { id: 'A7', display: "ride", answer: "ridden", rule: "不規則變化" },
-            { id: 'A8', display: "take", answer: "taken", rule: "不規則變化" },
-            { id: 'A9', display: "get", answer: "got", rule: "不規則變化" },
-            { id: 'A10', display: "sit", answer: "sat", rule: "不規則變化" }
+        const words = [
+            { id: 1, present: "ask", perfect: "asked", rule: "規則變化：字尾直接加 -ed" },
+            { id: 2, present: "look", perfect: "looked", rule: "規則變化：字尾直接加 -ed" },
+            { id: 3, present: "shout", perfect: "shouted", rule: "規則變化：字尾直接加 -ed" },
+            { id: 4, present: "tidy", perfect: "tidied", rule: "規則變化：字尾是子音+y，去y加 -ied" },
+            { id: 5, present: "study", perfect: "studied", rule: "規則變化：字尾是子音+y，去y加 -ied" },
+            { id: 6, present: "eat", perfect: "eaten", rule: "不規則變化" },
+            { id: 7, present: "ride", perfect: "ridden", rule: "不規則變化" },
+            { id: 8, present: "take", perfect: "taken", rule: "不規則變化" },
+            { id: 9, present: "get", perfect: "got", rule: "不規則變化" },
+            { id: 10, present: "sit", perfect: "sat", rule: "不規則變化" }
         ];
 
-        let wordsB = [
-            { id: 'B1', answer: "earrings" },
-            { id: 'B2', answer: "necklace" },
-            { id: 'B3', answer: "ring" },
-            { id: 'B4', answer: "diamond" },
-            { id: 'B5', answer: "gold" },
-            { id: 'B6', answer: "silver" },
-            { id: 'B7', answer: "spotted" },
-            { id: 'B8', answer: "striped" },
-            { id: 'B9', answer: "curly" },
-            { id: 'B10', answer: "straight" },
-            { id: 'B11', answer: "turnip cakes", isLong: true },
-            { id: 'B12', answer: "reunion dinner", isLong: true }
-        ];
+        const tbody = document.getElementById('exercise-body');
+        const contexts = {};
 
-        let contexts = {};
-        let isWordsHidden = true; // 預設 Part B 詞語為隱藏狀態(模糊)
-
-        // 發音功能
         function speak(text) {
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'en-US';
             window.speechSynthesis.speak(utterance);
         }
 
-        // 初始化畫布與繪圖事件
-        function setupCanvas(canvasId) {
-            const canvas = document.getElementById(canvasId);
+        words.forEach(word => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>Question ${word.id}</td>
+                <td class="word-cell">
+                    ${word.present} 
+                    <button class="icon-btn" onclick="speak('${word.present}')" title="讀出 Present tense">🔊</button>
+                </td>
+                <td>
+                    <div class="tools-container">
+                        <button class="icon-btn" onclick="speak('${word.perfect}')" title="讀出答案發音">🔊</button>
+                        <button class="icon-btn tool-pen active-tool" data-id="${word.id}" title="藍筆">🖊️</button>
+                        <button class="icon-btn tool-eraser" data-id="${word.id}" title="迷你膠擦">🧽</button>
+                    </div>
+                </td>
+                <td>
+                    <div class="canvas-wrapper">
+                        <div class="canvas-container">
+                            <canvas id="canvas-${word.id}" width="300" height="120"></canvas>
+                        </div>
+                        <span class="result-icon" id="icon-${word.id}"></span>
+                    </div>
+                </td>
+                <td class="correct-answer-col" id="correct-${word.id}"></td>
+            `;
+            tbody.appendChild(tr);
+
+            const canvas = document.getElementById(`canvas-${word.id}`);
             const ctx = canvas.getContext('2d');
-            contexts[canvasId] = ctx;
+            contexts[word.id] = ctx;
             
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
@@ -347,238 +344,139 @@
             ctx.strokeStyle = '#0000FF';
 
             let isDrawing = false;
-            const startPosition = (e) => { isDrawing = true; draw(e); };
-            const endPosition = () => { isDrawing = false; ctx.beginPath(); };
+
+            const startPosition = (e) => {
+                isDrawing = true;
+                draw(e);
+            };
+
+            const endPosition = () => {
+                isDrawing = false;
+                ctx.beginPath();
+            };
+
             const draw = (e) => {
                 if (!isDrawing) return;
                 e.preventDefault(); 
+                
                 const rect = canvas.getBoundingClientRect();
                 const clientX = e.touches ? e.touches[0].clientX : e.clientX;
                 const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                ctx.lineTo(clientX - rect.left, clientY - rect.top);
+                
+                const x = clientX - rect.left;
+                const y = clientY - rect.top;
+
+                ctx.lineTo(x, y);
                 ctx.stroke();
                 ctx.beginPath();
-                ctx.moveTo(clientX - rect.left, clientY - rect.top);
+                ctx.moveTo(x, y);
             };
 
             canvas.addEventListener('mousedown', startPosition);
             canvas.addEventListener('mouseup', endPosition);
             canvas.addEventListener('mousemove', draw);
             canvas.addEventListener('mouseout', endPosition);
+
             canvas.addEventListener('touchstart', startPosition, { passive: false });
             canvas.addEventListener('touchend', endPosition);
             canvas.addEventListener('touchmove', draw, { passive: false });
-        }
+        });
 
-        // 渲染 Part A
-        function renderPartA() {
-            const tbodyA = document.getElementById('exercise-body-a');
-            tbodyA.innerHTML = '';
-            wordsA.forEach((word, index) => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>Q${index + 1}</td>
-                    <td class="word-cell">
-                        ${word.display} 
-                        <button class="icon-btn" onclick="speak('${word.display}')" title="讀出 Present tense">🔊</button>
-                    </td>
-                    <td>
-                        <div class="tools-container">
-                            <button class="icon-btn tool-pen active-tool" data-target="canvas-${word.id}" title="藍筆">🖊️</button>
-                            <button class="icon-btn tool-eraser" data-target="canvas-${word.id}" title="迷你膠擦">🧽</button>
-                        </div>
-                    </td>
-                    <td>
-                        <div class="canvas-wrapper">
-                            <div class="canvas-container">
-                                <canvas id="canvas-${word.id}" width="300" height="120"></canvas>
-                            </div>
-                            <span class="result-icon" id="icon-${word.id}"></span>
-                        </div>
-                    </td>
-                    <td class="correct-answer-col" id="correct-${word.id}"></td>
-                `;
-                tbodyA.appendChild(tr);
-                setupCanvas(`canvas-${word.id}`);
-            });
-        }
-
-        // 渲染 Part B
-        function renderPartB() {
-            const tbodyB = document.getElementById('exercise-body-b');
-            tbodyB.innerHTML = '';
-            wordsB.forEach((word, index) => {
-                const blurClass = isWordsHidden ? 'hidden-word' : 'hidden-word revealed';
-                const canvasClass = word.isLong ? 'canvas-container long-word-canvas' : 'canvas-container';
-                const canvasWidth = word.isLong ? 340 : 300;
+        document.querySelectorAll('.tool-pen').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = e.currentTarget.getAttribute('data-id');
+                const ctx = contexts[id];
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.strokeStyle = '#0000FF';
+                ctx.lineWidth = 3; 
                 
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>Q${index + 1}</td>
-                    <td class="word-cell">
-                        <button class="icon-btn" onclick="speak('${word.answer}')" title="聽發音" style="background:#e8f5e9; border-color:#4CAF50;">🔊 聽發音</button>
-                        <span class="${blurClass}">${word.answer}</span>
-                    </td>
-                    <td>
-                        <div class="tools-container">
-                            <button class="icon-btn tool-pen active-tool" data-target="canvas-${word.id}" title="藍筆">🖊️</button>
-                            <button class="icon-btn tool-eraser" data-target="canvas-${word.id}" title="迷你膠擦">🧽</button>
-                        </div>
-                    </td>
-                    <td>
-                        <div class="canvas-wrapper">
-                            <div class="${canvasClass}">
-                                <canvas id="canvas-${word.id}" width="${canvasWidth}" height="120"></canvas>
-                            </div>
-                            <span class="result-icon" id="icon-${word.id}"></span>
-                        </div>
-                    </td>
-                    <td class="correct-answer-col" id="correct-${word.id}"></td>
-                `;
-                tbodyB.appendChild(tr);
-                setupCanvas(`canvas-${word.id}`);
+                document.querySelector(`.tool-eraser[data-id="${id}"]`).classList.remove('active-tool');
+                e.currentTarget.classList.add('active-tool');
             });
-        }
+        });
 
-        // 初始化
-        renderPartA();
-        renderPartB();
-
-        // 事件代理：處理所有筆和膠擦的點擊
-        document.body.addEventListener('click', (e) => {
-            const btn = e.target.closest('button');
-            if (!btn) return;
-            
-            if (btn.classList.contains('tool-pen') || btn.classList.contains('tool-eraser')) {
-                const targetId = btn.getAttribute('data-target');
-                const ctx = contexts[targetId];
+        document.querySelectorAll('.tool-eraser').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = e.currentTarget.getAttribute('data-id');
+                const ctx = contexts[id];
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.lineWidth = 20; 
                 
-                // 重置同組工具的 active 狀態
-                const container = btn.closest('.tools-container');
-                container.querySelectorAll('button').forEach(b => b.classList.remove('active-tool'));
-                btn.classList.add('active-tool');
-
-                if (btn.classList.contains('tool-pen')) {
-                    ctx.globalCompositeOperation = 'source-over';
-                    ctx.strokeStyle = '#0000FF';
-                    ctx.lineWidth = 3; 
-                } else {
-                    ctx.globalCompositeOperation = 'destination-out';
-                    ctx.lineWidth = 20; 
-                }
-            }
-        });
-
-        // Part B 按鈕功能
-        document.getElementById('btn-shuffle-b').addEventListener('click', () => {
-            if(confirm("打亂次序會清除 Part B 目前的筆跡，確定要繼續嗎？")) {
-                wordsB.sort(() => Math.random() - 0.5);
-                renderPartB();
-            }
-        });
-
-        document.getElementById('btn-toggle-words').addEventListener('click', () => {
-            isWordsHidden = !isWordsHidden;
-            const wordElements = document.querySelectorAll('#exercise-body-b .hidden-word');
-            wordElements.forEach(el => {
-                if (isWordsHidden) el.classList.remove('revealed');
-                else el.classList.add('revealed');
+                document.querySelector(`.tool-pen[data-id="${id}"]`).classList.remove('active-tool');
+                e.currentTarget.classList.add('active-tool');
             });
         });
-
-        // AI 批改邏輯
-        async function recognizeCanvas(canvasId) {
-            const canvas = document.getElementById(canvasId);
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = canvas.width;
-            tempCanvas.height = canvas.height;
-            const tempCtx = tempCanvas.getContext('2d');
-            tempCtx.fillStyle = '#FFFFFF';
-            tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-            tempCtx.drawImage(canvas, 0, 0);
-            
-            const dataUrl = tempCanvas.toDataURL('image/png');
-            try {
-                const result = await Tesseract.recognize(dataUrl, 'eng');
-                // 移除非英文字母並轉小寫，增加對學生寫字間距不穩定的容錯率
-                return result.data.text.replace(/[^a-zA-Z]/g, '').toLowerCase(); 
-            } catch (error) {
-                console.error("OCR Error:", error);
-                return "";
-            }
-        }
 
         document.getElementById('btn-grade').addEventListener('click', async () => {
             const btn = document.getElementById('btn-grade');
             btn.disabled = true;
-            btn.innerText = "🔄 AI 正在辨識全卷字跡，請稍候...";
+            btn.innerText = "🔄 AI 正在辨識手寫字跡，請稍候...";
             
-            let scoreA = 0;
-            let scoreB = 0;
+            let score = 0;
             let feedbackHTML = "<ul>";
 
-            // 批改 Part A
-            for (let word of wordsA) {
-                const recognizedText = await recognizeCanvas(`canvas-${word.id}`);
-                const correctAnsMatch = word.answer.replace(/[^a-zA-Z]/g, '').toLowerCase();
-                const isCorrect = (recognizedText === correctAnsMatch);
-
-                const iconEl = document.getElementById(`icon-${word.id}`);
-                iconEl.innerHTML = isCorrect ? '✔️' : '❌';
-                iconEl.style.color = isCorrect ? 'green' : 'red';
+            for (let i = 0; i < words.length; i++) {
+                const word = words[i];
+                const canvas = document.getElementById(`canvas-${word.id}`);
                 
-                const correctEl = document.getElementById(`correct-${word.id}`);
-                correctEl.innerText = isCorrect ? '✔️ 答對了' : word.answer;
-                correctEl.style.color = isCorrect ? 'green' : '#d32f2f';
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = canvas.width;
+                tempCanvas.height = canvas.height;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.fillStyle = '#FFFFFF';
+                tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                tempCtx.drawImage(canvas, 0, 0);
 
-                if (isCorrect) scoreA += 1;
-                else feedbackHTML += `<li><strong>Part A (${word.display})：</strong>辨識為「${recognizedText || "空白"}」，正確是「${word.answer}」。<small>(${word.rule})</small></li>`;
-            }
-
-            // 批改 Part B
-            for (let word of wordsB) {
-                const recognizedText = await recognizeCanvas(`canvas-${word.id}`);
-                const correctAnsMatch = word.answer.replace(/[^a-zA-Z]/g, '').toLowerCase();
-                const isCorrect = (recognizedText === correctAnsMatch);
-
-                const iconEl = document.getElementById(`icon-${word.id}`);
-                iconEl.innerHTML = isCorrect ? '✔️' : '❌';
-                iconEl.style.color = isCorrect ? 'green' : 'red';
+                const dataUrl = tempCanvas.toDataURL('image/png');
                 
-                const correctEl = document.getElementById(`correct-${word.id}`);
-                correctEl.innerText = isCorrect ? '✔️ 答對 (+3分)' : word.answer;
-                correctEl.style.color = isCorrect ? 'green' : '#d32f2f';
+                try {
+                    const result = await Tesseract.recognize(dataUrl, 'eng');
+                    const recognizedText = result.data.text.replace(/\s+/g, ''); 
+                    const correctAns = word.perfect;
+                    
+                    const isCorrect = (recognizedText === correctAns);
 
-                if (isCorrect) scoreB += 3;
-                else feedbackHTML += `<li><strong>Part B (聽音默寫)：</strong>辨識為「${recognizedText || "空白"}」，正確是「${word.answer}」。</li>`;
+                    const iconEl = document.getElementById(`icon-${word.id}`);
+                    iconEl.innerHTML = isCorrect ? '✔️' : '❌';
+                    iconEl.style.color = isCorrect ? 'green' : 'red';
+
+                    document.getElementById(`correct-${word.id}`).innerText = isCorrect ? '✔️ 答對了' : `正確答案: ${correctAns}`;
+                    document.getElementById(`correct-${word.id}`).style.color = isCorrect ? 'green' : '#d32f2f';
+
+                    if (isCorrect) {
+                        score++;
+                    } else {
+                        feedbackHTML += `<li><strong>第 ${word.id} 題 (${word.present})：</strong><br> 
+                        AI 辨識為「<span style="color:red">${recognizedText || "(空白)"}</span>」。<br>
+                        正確是「<span style="color:green">${correctAns}</span>」。<br>
+                        <small>📝 規則：${word.rule}</small></li><br>`;
+                    }
+                } catch (error) {
+                    console.error("OCR 錯誤:", error);
+                }
             }
 
             feedbackHTML += "</ul>";
-            if (scoreA === 10 && scoreB === 36) {
-                feedbackHTML = "<h3 style='text-align:center; color:#2E7D32;'>🎉 太棒了！全卷正確！AI 給你滿分！</h3>";
-            } else if (scoreA === 10 && scoreB === 0) {
-                 feedbackHTML = "<ul>" + feedbackHTML + "</ul>"; // Prevent empty UL issue if specific case
+            if (score === 10) {
+                feedbackHTML = "<h3>🎉 太棒了！全部正確！AI 給你 100 分！</h3>";
             }
 
-            document.getElementById('score-a').innerText = scoreA;
-            document.getElementById('score-b').innerText = scoreB;
-            document.getElementById('score-total').innerText = scoreA + scoreB;
-            
+            document.getElementById('score-text').innerText = score;
             document.getElementById('detailed-feedback').innerHTML = feedbackHTML;
             document.getElementById('feedback-section').style.display = 'block';
 
             btn.disabled = false;
-            btn.innerText = "🤖 AI自動批改全卷";
+            btn.innerText = "🤖 AI自動批改";
+            
+            // 批改完成後自動向下捲動
             document.getElementById('btn-screenshot').scrollIntoView({ behavior: 'smooth' });
         });
 
-        // 清屏重默
         document.getElementById('btn-clear').addEventListener('click', () => {
-            if(confirm("確定要清除全卷筆跡重新開始嗎？")) {
-                const allWords = [...wordsA, ...wordsB];
-                allWords.forEach(word => {
+            if(confirm("確定要清除所有筆跡重新開始嗎？")) {
+                words.forEach(word => {
                     const canvas = document.getElementById(`canvas-${word.id}`);
-                    const ctx = contexts[`canvas-${word.id}`];
+                    const ctx = contexts[word.id];
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
                     
                     document.getElementById(`icon-${word.id}`).innerHTML = '';
@@ -587,42 +485,52 @@
                     ctx.globalCompositeOperation = 'source-over';
                     ctx.strokeStyle = '#0000FF';
                     ctx.lineWidth = 3;
-                    
-                    const container = canvas.closest('tr').querySelector('.tools-container');
-                    container.querySelectorAll('button').forEach(b => b.classList.remove('active-tool'));
-                    container.querySelector('.tool-pen').classList.add('active-tool');
+                    document.querySelector(`.tool-eraser[data-id="${word.id}"]`).classList.remove('active-tool');
+                    document.querySelector(`.tool-pen[data-id="${word.id}"]`).classList.add('active-tool');
                 });
+                
                 document.getElementById('feedback-section').style.display = 'none';
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         });
 
-        // 截圖下載
+        // 截圖下載功能
         document.getElementById('btn-screenshot').addEventListener('click', () => {
             const btn = document.getElementById('btn-screenshot');
             const originalText = btn.innerText;
+            
+            // 按下時改變按鈕狀態，避免重複點擊
             btn.innerText = "⏳ 正在產生截圖，請稍候...";
             btn.disabled = true;
 
+            // 鎖定我們要截圖的範圍 (id="capture-area")
             const captureArea = document.getElementById('capture-area');
+
             html2canvas(captureArea, {
-                scale: 2, 
-                backgroundColor: "#f4f7f6",
-                useCORS: true 
+                scale: 2, // 提高解析度，讓截出來的圖片更清晰
+                backgroundColor: "#f4f7f6", // 確保背景色一致
+                useCORS: true // 確保外部字體或資源能正確載入
             }).then(canvas => {
+                // 將 canvas 轉換為圖片數據
                 const imgData = canvas.toDataURL('image/png');
+                
+                // 建立一個虛擬的超連結來觸發下載
                 const link = document.createElement('a');
-                link.download = '英文默書成績表_PartA_PartB.png';
+                link.download = '英文默書成績表.png'; // 下載的預設檔名
                 link.href = imgData;
+                
+                // 模擬點擊下載
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
 
+                // 恢復按鈕狀態
                 btn.innerText = "✅ 截圖已下載！現在可以上傳 Padlet 了";
                 setTimeout(() => {
                     btn.innerText = originalText;
                     btn.disabled = false;
-                }, 3000); 
+                }, 3000); // 3秒後恢復原狀
+                
             }).catch(error => {
                 console.error("截圖失敗:", error);
                 alert("截圖時發生錯誤，請重試！");
