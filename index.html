@@ -79,25 +79,12 @@
         }
         .hidden-word.revealed { filter: blur(0); }
 
-        /* 畫布容器改用 Flexbox 以支援多個畫布並排 */
         .canvas-wrapper {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: center;
-            align-items: center;
-        }
-        .canvas-box {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .canvas-label {
-            font-size: 0.8em;
-            color: #757575;
-            margin-bottom: 4px;
+            position: relative;
+            display: inline-block;
         }
         .canvas-container {
+            width: 300px; 
             height: 120px; 
             background-color: transparent;
             background-image: 
@@ -107,7 +94,11 @@
             border-bottom: 2px solid #ff9999;
             box-sizing: border-box;
             position: relative;
+            margin: 0 auto;
         }
+        /* 針對較長詞語的微調 */
+        .long-word-canvas { width: 340px; }
+
         canvas {
             position: absolute;
             top: 0;
@@ -155,6 +146,7 @@
             font-size: 2em;
             margin-left: 10px;
             vertical-align: middle;
+            display: inline-block;
         }
         .correct-answer-col {
             color: #d32f2f;
@@ -235,7 +227,7 @@
                 padding: 5px 15px; border-radius: 20px; font-weight: bold; margin-bottom: 10px;
             }
             .tools-container { flex-direction: row; }
-            .canvas-wrapper { flex-direction: column; align-items: center; }
+            .canvas-wrapper { display: block; }
             .result-icon { display: block; margin-top: 10px; margin-left: 0; }
             .correct-answer-col { background: #ffebee; padding: 10px; border-radius: 5px; margin-top: 10px; }
             .correct-answer-col:empty { display: none; }
@@ -329,22 +321,23 @@
             { id: 'B8', answer: "striped" },
             { id: 'B9', answer: "curly" },
             { id: 'B10', answer: "straight" },
-            { id: 'B11', answer: "turnip cakes" },
-            { id: 'B12', answer: "reunion dinner" }
+            { id: 'B11', answer: "turnip cakes", isLong: true },
+            { id: 'B12', answer: "reunion dinner", isLong: true }
         ];
 
         let contexts = {};
-        let isWordsHidden = true;
+        let isWordsHidden = true; // 預設 Part B 詞語為隱藏狀態(模糊)
 
+        // 發音功能
         function speak(text) {
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'en-US';
             window.speechSynthesis.speak(utterance);
         }
 
+        // 初始化畫布與繪圖事件
         function setupCanvas(canvasId) {
             const canvas = document.getElementById(canvasId);
-            if(!canvas) return;
             const ctx = canvas.getContext('2d');
             contexts[canvasId] = ctx;
             
@@ -377,6 +370,7 @@
             canvas.addEventListener('touchmove', draw, { passive: false });
         }
 
+        // 渲染 Part A
         function renderPartA() {
             const tbodyA = document.getElementById('exercise-body-a');
             tbodyA.innerHTML = '';
@@ -390,16 +384,14 @@
                     </td>
                     <td>
                         <div class="tools-container">
-                            <button class="icon-btn tool-pen active-tool" data-row="${word.id}" title="藍筆">🖊️</button>
-                            <button class="icon-btn tool-eraser" data-row="${word.id}" title="迷你膠擦">🧽</button>
+                            <button class="icon-btn tool-pen active-tool" data-target="canvas-${word.id}" title="藍筆">🖊️</button>
+                            <button class="icon-btn tool-eraser" data-target="canvas-${word.id}" title="迷你膠擦">🧽</button>
                         </div>
                     </td>
                     <td>
                         <div class="canvas-wrapper">
-                            <div class="canvas-box">
-                                <div class="canvas-container" style="width: 300px;">
-                                    <canvas id="canvas-${word.id}-0" width="300" height="120"></canvas>
-                                </div>
+                            <div class="canvas-container">
+                                <canvas id="canvas-${word.id}" width="300" height="120"></canvas>
                             </div>
                             <span class="result-icon" id="icon-${word.id}"></span>
                         </div>
@@ -407,34 +399,18 @@
                     <td class="correct-answer-col" id="correct-${word.id}"></td>
                 `;
                 tbodyA.appendChild(tr);
-                setupCanvas(`canvas-${word.id}-0`);
+                setupCanvas(`canvas-${word.id}`);
             });
         }
 
+        // 渲染 Part B
         function renderPartB() {
             const tbodyB = document.getElementById('exercise-body-b');
             tbodyB.innerHTML = '';
             wordsB.forEach((word, index) => {
                 const blurClass = isWordsHidden ? 'hidden-word' : 'hidden-word revealed';
-                
-                // 將詞語依照空格切割，動態生成多個畫布
-                const parts = word.answer.split(' ');
-                let canvasesHTML = '';
-                
-                parts.forEach((part, i) => {
-                    // 如果是多字詞，畫布寬度稍微縮小(200px)方便並排；單字詞維持 300px
-                    const canvasWidth = parts.length > 1 ? 200 : 300;
-                    const labelHTML = parts.length > 1 ? `<div class="canvas-label">字詞 ${i + 1}</div>` : '';
-                    
-                    canvasesHTML += `
-                        <div class="canvas-box">
-                            ${labelHTML}
-                            <div class="canvas-container" style="width: ${canvasWidth}px;">
-                                <canvas id="canvas-${word.id}-${i}" width="${canvasWidth}" height="120"></canvas>
-                            </div>
-                        </div>
-                    `;
-                });
+                const canvasClass = word.isLong ? 'canvas-container long-word-canvas' : 'canvas-container';
+                const canvasWidth = word.isLong ? 340 : 300;
                 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
@@ -445,30 +421,215 @@
                     </td>
                     <td>
                         <div class="tools-container">
-                            <button class="icon-btn tool-pen active-tool" data-row="${word.id}" title="藍筆">🖊️</button>
-                            <button class="icon-btn tool-eraser" data-row="${word.id}" title="迷你膠擦">🧽</button>
+                            <button class="icon-btn tool-pen active-tool" data-target="canvas-${word.id}" title="藍筆">🖊️</button>
+                            <button class="icon-btn tool-eraser" data-target="canvas-${word.id}" title="迷你膠擦">🧽</button>
                         </div>
                     </td>
                     <td>
                         <div class="canvas-wrapper">
-                            ${canvasesHTML}
+                            <div class="${canvasClass}">
+                                <canvas id="canvas-${word.id}" width="${canvasWidth}" height="120"></canvas>
+                            </div>
                             <span class="result-icon" id="icon-${word.id}"></span>
                         </div>
                     </td>
                     <td class="correct-answer-col" id="correct-${word.id}"></td>
                 `;
                 tbodyB.appendChild(tr);
-                
-                // 初始化該題產生的所有畫布
-                parts.forEach((p, i) => {
-                    setupCanvas(`canvas-${word.id}-${i}`);
-                });
+                setupCanvas(`canvas-${word.id}`);
             });
         }
 
+        // 初始化
         renderPartA();
         renderPartB();
 
-        // 統一處理工具點擊事件 (會套用到該題的所有畫布)
+        // 事件代理：處理所有筆和膠擦的點擊
         document.body.addEventListener('click', (e) => {
-            const
+            const btn = e.target.closest('button');
+            if (!btn) return;
+            
+            if (btn.classList.contains('tool-pen') || btn.classList.contains('tool-eraser')) {
+                const targetId = btn.getAttribute('data-target');
+                const ctx = contexts[targetId];
+                
+                // 重置同組工具的 active 狀態
+                const container = btn.closest('.tools-container');
+                container.querySelectorAll('button').forEach(b => b.classList.remove('active-tool'));
+                btn.classList.add('active-tool');
+
+                if (btn.classList.contains('tool-pen')) {
+                    ctx.globalCompositeOperation = 'source-over';
+                    ctx.strokeStyle = '#0000FF';
+                    ctx.lineWidth = 3; 
+                } else {
+                    ctx.globalCompositeOperation = 'destination-out';
+                    ctx.lineWidth = 20; 
+                }
+            }
+        });
+
+        // Part B 按鈕功能
+        document.getElementById('btn-shuffle-b').addEventListener('click', () => {
+            if(confirm("打亂次序會清除 Part B 目前的筆跡，確定要繼續嗎？")) {
+                wordsB.sort(() => Math.random() - 0.5);
+                renderPartB();
+            }
+        });
+
+        document.getElementById('btn-toggle-words').addEventListener('click', () => {
+            isWordsHidden = !isWordsHidden;
+            const wordElements = document.querySelectorAll('#exercise-body-b .hidden-word');
+            wordElements.forEach(el => {
+                if (isWordsHidden) el.classList.remove('revealed');
+                else el.classList.add('revealed');
+            });
+        });
+
+        // AI 批改邏輯
+        async function recognizeCanvas(canvasId) {
+            const canvas = document.getElementById(canvasId);
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.fillStyle = '#FFFFFF';
+            tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+            tempCtx.drawImage(canvas, 0, 0);
+            
+            const dataUrl = tempCanvas.toDataURL('image/png');
+            try {
+                const result = await Tesseract.recognize(dataUrl, 'eng');
+                // 移除非英文字母並轉小寫，增加對學生寫字間距不穩定的容錯率
+                return result.data.text.replace(/[^a-zA-Z]/g, '').toLowerCase(); 
+            } catch (error) {
+                console.error("OCR Error:", error);
+                return "";
+            }
+        }
+
+        document.getElementById('btn-grade').addEventListener('click', async () => {
+            const btn = document.getElementById('btn-grade');
+            btn.disabled = true;
+            btn.innerText = "🔄 AI 正在辨識全卷字跡，請稍候...";
+            
+            let scoreA = 0;
+            let scoreB = 0;
+            let feedbackHTML = "<ul>";
+
+            // 批改 Part A
+            for (let word of wordsA) {
+                const recognizedText = await recognizeCanvas(`canvas-${word.id}`);
+                const correctAnsMatch = word.answer.replace(/[^a-zA-Z]/g, '').toLowerCase();
+                const isCorrect = (recognizedText === correctAnsMatch);
+
+                const iconEl = document.getElementById(`icon-${word.id}`);
+                iconEl.innerHTML = isCorrect ? '✔️' : '❌';
+                iconEl.style.color = isCorrect ? 'green' : 'red';
+                
+                const correctEl = document.getElementById(`correct-${word.id}`);
+                correctEl.innerText = isCorrect ? '✔️ 答對了' : word.answer;
+                correctEl.style.color = isCorrect ? 'green' : '#d32f2f';
+
+                if (isCorrect) scoreA += 1;
+                else feedbackHTML += `<li><strong>Part A (${word.display})：</strong>辨識為「${recognizedText || "空白"}」，正確是「${word.answer}」。<small>(${word.rule})</small></li>`;
+            }
+
+            // 批改 Part B
+            for (let word of wordsB) {
+                const recognizedText = await recognizeCanvas(`canvas-${word.id}`);
+                const correctAnsMatch = word.answer.replace(/[^a-zA-Z]/g, '').toLowerCase();
+                const isCorrect = (recognizedText === correctAnsMatch);
+
+                const iconEl = document.getElementById(`icon-${word.id}`);
+                iconEl.innerHTML = isCorrect ? '✔️' : '❌';
+                iconEl.style.color = isCorrect ? 'green' : 'red';
+                
+                const correctEl = document.getElementById(`correct-${word.id}`);
+                correctEl.innerText = isCorrect ? '✔️ 答對 (+3分)' : word.answer;
+                correctEl.style.color = isCorrect ? 'green' : '#d32f2f';
+
+                if (isCorrect) scoreB += 3;
+                else feedbackHTML += `<li><strong>Part B (聽音默寫)：</strong>辨識為「${recognizedText || "空白"}」，正確是「${word.answer}」。</li>`;
+            }
+
+            feedbackHTML += "</ul>";
+            if (scoreA === 10 && scoreB === 36) {
+                feedbackHTML = "<h3 style='text-align:center; color:#2E7D32;'>🎉 太棒了！全卷正確！AI 給你滿分！</h3>";
+            } else if (scoreA === 10 && scoreB === 0) {
+                 feedbackHTML = "<ul>" + feedbackHTML + "</ul>"; // Prevent empty UL issue if specific case
+            }
+
+            document.getElementById('score-a').innerText = scoreA;
+            document.getElementById('score-b').innerText = scoreB;
+            document.getElementById('score-total').innerText = scoreA + scoreB;
+            
+            document.getElementById('detailed-feedback').innerHTML = feedbackHTML;
+            document.getElementById('feedback-section').style.display = 'block';
+
+            btn.disabled = false;
+            btn.innerText = "🤖 AI自動批改全卷";
+            document.getElementById('btn-screenshot').scrollIntoView({ behavior: 'smooth' });
+        });
+
+        // 清屏重默
+        document.getElementById('btn-clear').addEventListener('click', () => {
+            if(confirm("確定要清除全卷筆跡重新開始嗎？")) {
+                const allWords = [...wordsA, ...wordsB];
+                allWords.forEach(word => {
+                    const canvas = document.getElementById(`canvas-${word.id}`);
+                    const ctx = contexts[`canvas-${word.id}`];
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    
+                    document.getElementById(`icon-${word.id}`).innerHTML = '';
+                    document.getElementById(`correct-${word.id}`).innerText = '';
+                    
+                    ctx.globalCompositeOperation = 'source-over';
+                    ctx.strokeStyle = '#0000FF';
+                    ctx.lineWidth = 3;
+                    
+                    const container = canvas.closest('tr').querySelector('.tools-container');
+                    container.querySelectorAll('button').forEach(b => b.classList.remove('active-tool'));
+                    container.querySelector('.tool-pen').classList.add('active-tool');
+                });
+                document.getElementById('feedback-section').style.display = 'none';
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        });
+
+        // 截圖下載
+        document.getElementById('btn-screenshot').addEventListener('click', () => {
+            const btn = document.getElementById('btn-screenshot');
+            const originalText = btn.innerText;
+            btn.innerText = "⏳ 正在產生截圖，請稍候...";
+            btn.disabled = true;
+
+            const captureArea = document.getElementById('capture-area');
+            html2canvas(captureArea, {
+                scale: 2, 
+                backgroundColor: "#f4f7f6",
+                useCORS: true 
+            }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const link = document.createElement('a');
+                link.download = '英文默書成績表_PartA_PartB.png';
+                link.href = imgData;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                btn.innerText = "✅ 截圖已下載！現在可以上傳 Padlet 了";
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                }, 3000); 
+            }).catch(error => {
+                console.error("截圖失敗:", error);
+                alert("截圖時發生錯誤，請重試！");
+                btn.innerText = originalText;
+                btn.disabled = false;
+            });
+        });
+    </script>
+</body>
+</html>
